@@ -1,0 +1,15 @@
+{
+  "name": "botshelfvampire",
+  "owner": {
+    "name": "BotShelf Vampire",
+    "url": "https://botshelfvampire.com"
+  },
+  "description": "BotShelf Vampire: read-only MCP access to the shelf.",
+  "plugins": [
+    {
+      "name": "botshelf-mcp",
+      "source": "./",
+      "description": "Read-only remote MCP server for the BotShelf Vampire shelf."
+    }
+  ]
+}

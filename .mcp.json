@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "botshelf": {
+      "type": "http",
+      "url": "https://botshelfvampire.com/api/mcp"
+    }
+  }
+}

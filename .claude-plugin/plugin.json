@@ -1,0 +1,18 @@
+{
+  "name": "botshelf-mcp",
+  "displayName": "BotShelf Vampire (read-only MCP)",
+  "version": "1.0.0",
+  "description": "Search the BotShelf Vampire shelf and read the full text of its free items through a read-only remote MCP server.",
+  "author": {
+    "name": "BotShelf Vampire",
+    "url": "https://botshelfvampire.com"
+  },
+  "homepage": "https://botshelfvampire.com/mcp/",
+  "repository": "https://github.com/BotShelfVampire/botshelf-mcp",
+  "license": "MIT",
+  "keywords": [
+    "botshelf",
+    "botshelf-vampire",
+    "mcp"
+  ]
+}
