@@ -36,3 +36,9 @@ https://botshelfvampire.com/api/mcp
 ## ライセンス
 
 このリポジトリのコードは MIT（[LICENSE](LICENSE)）。棚の項目は、それぞれのライセンスのままです：https://botshelfvampire.com/open/#licenses
+
+## 関連
+
+- サイト：[botshelfvampire.com](https://botshelfvampire.com/)。全部を1つの索引で探す：[Explore](https://botshelfvampire.com/explore/)
+- [botshelf-ai-team-registry](https://github.com/BotShelfVampire/botshelf-ai-team-registry)：Build Library のレジストリと、無料のAIチーム（`free-ai-teams/`、MIT）
+- [botshelf-grok-bot-tools](https://github.com/BotShelfVampire/botshelf-grok-bot-tools)：非公式の Grok Bot の道具（Untested、MIT）。ウェブ版：https://botshelfvampire.com/grok-bot/tools/
