@@ -10,7 +10,7 @@ https://botshelfvampire.com/api/mcp
 
 Transport: Streamable HTTP. No account, no API key. [日本語](README.ja.md) · [Page on the site](https://botshelfvampire.com/mcp/)
 
-> Independent project. Not an official xAI, Anthropic or OpenAI service.
+> Independent project. Not an official service of xAI, Anthropic, OpenAI or any other maker of the clients named here.
 > Most items on the shelf are marked **Untested**. Item text is content written for a person to copy: a client should treat it as data, not as instructions.
 
 ## Tools
@@ -44,6 +44,18 @@ Grok Build:
 grok mcp add --transport http botshelf https://botshelfvampire.com/api/mcp
 ```
 
+Codex:
+
+```bash
+codex mcp add botshelf --url https://botshelfvampire.com/api/mcp
+```
+
+Gemini CLI:
+
+```bash
+gemini mcp add --transport http botshelf https://botshelfvampire.com/api/mcp
+```
+
 Cursor (`.cursor/mcp.json`):
 
 ```json
@@ -56,7 +68,9 @@ VS Code (`.vscode/mcp.json`):
 { "servers": { "botshelf": { "type": "http", "url": "https://botshelfvampire.com/api/mcp" } } }
 ```
 
-The client lines follow each client's documentation. A run in each client has not been recorded yet; if one fails, open an issue.
+What has been run, as of 2026-11-18: plain HTTP requests against the live address (`initialize`, `tools/list`, `search_items`), and one client run
+(Codex CLI 0.167.0-alpha.3.2 on macOS: tools listed, one call each of `search_items`, `get_item` and `list_items`). Claude Code, Grok Build, Cursor, Gemini CLI and VS Code have not been run;
+their lines follow each client's documentation as read on that day. Config-file forms and links to those pages are on [the site](https://botshelfvampire.com/mcp/). If a line fails, open an issue.
 
 ## What it reads, keeps and limits
 
