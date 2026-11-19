@@ -1,10 +1,11 @@
-// Round 03: the edge function against the function, request by request.
+// The edge function against the function, request by request (round 03; since round 04 the edge answers every call).
 //   node edge_diff.mjs <tree>          (also runs under bun)
 // Both are loaded from the tree and get the same requests; every reply must be the same in status, headers and
 // body, except for the header that says which of the two answered. Nothing leaves the machine: the function's
 // and the edge function's reads of https://botshelfvampire.com/... are answered from the tree's files.
 import { createRequire } from "node:module";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -27,8 +28,8 @@ globalThis.fetch = async function (url) {
 
 const fn = require(path.join(tree, "netlify", "functions", "mcp.js"));
 const edgeModule = await import(pathToFileURL(path.join(tree, "netlify", "edge-functions", "mcp-edge.js")).href);
-// While the edge code is on trial it answers only requests that ask for it. Every request this test puts to it asks.
-const edge = { config: edgeModule.config, default: function (request, context) { request.headers.set("x-bsv-edge", "try"); return edgeModule.default(request, context); } };
+// The edge code answers every request that does not ask for the function (header "X-BSV-Edge: off").
+const edge = { config: edgeModule.config, default: function (request, context) { return edgeModule.default(request, context); } };
 let unhandled = 0;
 process.on("unhandledRejection", function () { unhandled++; });
 const index = JSON.parse(fs.readFileSync(path.join(tree, "site", fn.INDEX_PATH), "utf8"));
@@ -208,18 +209,19 @@ await sreq.body.cancel().catch(() => {});
 await new Promise((r) => setTimeout(r, 50));
 ok(sres && sres.status === 413 && unhandled === 0, "a stream that refuses to be cancelled: 413, and no unhandled rejection (" + unhandled + ")");
 
-// --- the trial: without the header that asks for the edge, the edge code answers nothing at all
+// --- the way back: a request that says "X-BSV-Edge: off" is not answered at the edge, whatever its method
 for (const m of ["POST", "GET", "OPTIONS"]) {
-  const init = { method: m, headers: J };
+  const init = { method: m, headers: Object.assign({ "x-bsv-edge": "off" }, J) };
   if (m === "POST") init.body = rpc(1, "ping");
-  ok((await edgeModule.default(new Request(ORIGIN + "/api/mcp", init), { ip: freshIp() })) === undefined, "trial: " + m + " without the header goes on to the function");
+  ok((await edgeModule.default(new Request(ORIGIN + "/api/mcp", init), { ip: freshIp() })) === undefined, "off: " + m + " with the header goes on to the function");
 }
-ok((await edgeModule.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: Object.assign({ "x-bsv-edge": "yes" }, J), body: rpc(1, "ping") }), { ip: freshIp() })) === undefined, "trial: another value of the header does not count");
+const tried = await edgeModule.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: Object.assign({ "x-bsv-edge": "try" }, J), body: rpc(1, "ping") }), { ip: freshIp() });
+ok(tried && tried.status === 200 && tried.headers.get("x-bsv-via") === "edge", "any other value of the header changes nothing: the edge answers");
 
 // --- the edge function alone
 const big = await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: Object.assign({ "content-length": "9999999" }, J), body: rpc(1, "ping") }), { ip: freshIp() });
 ok(big.status === 413, "a declared length far over the limit is refused without reading the body (" + big.status + ")");
-const broken = { method: "POST", headers: new Headers(Object.assign({ "x-bsv-edge": "try" }, J)), clone() { throw new Error("stream gone"); } };
+const broken = { method: "POST", headers: new Headers(J), clone() { throw new Error("stream gone"); } };
 ok((await edgeModule.default(broken, { ip: freshIp() })) === undefined, "when something throws, the edge function steps aside (returns nothing) so that the function answers");
 const noIp = await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: rpc(1, "ping") }), {});
 ok(noIp.status === 200, "no address given: still answered");
@@ -233,8 +235,26 @@ ok(fetched.length === 1 && fetched[0] === ORIGIN + openRow.raw, "get_item reads 
 const src = fs.readFileSync(path.join(tree, "netlify", "edge-functions", "mcp-edge.js"), "utf8");
 const code = src.slice(0, src.indexOf("const INDEX = JSON.parse(")) + src.slice(src.indexOf("const TEXT_TTL"));
 ok(!/process\.env|Netlify\.env|Deno\.env|require\(|import\s*\(|from\s+["']|localStorage|document\.|eval\(|new Function/.test(code.replace(/\/\/[^\n]*/g, "")), "the edge file reads no environment value, loads no module and builds no code");
-ok(/\nconst ANSWER_ALL = false;\n/.test(code) && code.indexOf('if (!ANSWER_ALL && request.headers.get("x-bsv-edge") !== "try") return undefined;') > 0, "the edge file is in its trial state");
+ok(/\nconst ANSWER_ALL = true;\n/.test(code) && code.indexOf('if (asked === "off" || (!ANSWER_ALL && asked !== "try")) return undefined;') > 0, "the edge file answers every call and steps aside when asked to");
 ok((code.match(/\bfetch\(/g) || []).length === 1 && /fetch\(ORIGIN \+ path,/.test(code), "the edge file makes one kind of request: a file of this site");
+
+// --- the switch thrown back (ANSWER_ALL false), as during the trial: only a request that asks with "X-BSV-Edge: try" is answered
+const backSrc = src.replace("\nconst ANSWER_ALL = true;\n", "\nconst ANSWER_ALL = false;\n");
+const backFile = path.join(os.tmpdir(), "bsv-edge-back-" + process.pid + ".mjs");
+fs.writeFileSync(backFile, backSrc);
+let back;
+try { back = await import(pathToFileURL(backFile).href); } finally { fs.unlinkSync(backFile); }
+ok(backSrc !== src && back && typeof back.default === "function", "the same file with the switch thrown back loads");
+for (const m of ["POST", "GET", "OPTIONS"]) {
+  const init = { method: m, headers: J };
+  if (m === "POST") init.body = rpc(1, "ping");
+  ok((await back.default(new Request(ORIGIN + "/api/mcp", init), { ip: freshIp() })) === undefined, "switch back: " + m + " without the header goes on to the function");
+}
+for (const v of ["yes", "off"]) {
+  ok((await back.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: Object.assign({ "x-bsv-edge": v }, J), body: rpc(1, "ping") }), { ip: freshIp() })) === undefined, "switch back: the header value " + v + " does not ask for the edge");
+}
+const asked = await back.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: Object.assign({ "x-bsv-edge": "try" }, J), body: rpc(1, "ping") }), { ip: freshIp() });
+ok(asked && asked.status === 200 && asked.headers.get("x-bsv-via") === "edge", "switch back: a request that asks with try is answered by the edge code");
 
 // --- how long the work itself takes (no network in this number)
 const t0 = performance.now();

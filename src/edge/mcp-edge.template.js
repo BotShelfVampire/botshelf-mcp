@@ -1,6 +1,6 @@
 // /api/mcp answered at the edge, close to the caller.
 //
-// GENERATED FILE. Made by world1/steps/w03.py from netlify/functions/_lib/mcpCore.js (the same code the function
+// GENERATED FILE. Made by world1/steps/w04.py from netlify/functions/_lib/mcpCore.js (the same code the function
 // runs) and site/data/@@INDEX_NAME@@ (the shelf index, held here so that no file has to be fetched to search).
 // Do not edit it by hand: change the core or the index and generate it again.
 //
@@ -8,10 +8,12 @@
 // reads no environment value and no secret. If anything in here throws, the request goes on to the function in
 // netlify/functions/mcp.js, which answers the same way (onError: "bypass" below, and the catch in the handler).
 //
-// TRIAL. This code has run under Node.js and bun, not yet on the platform's edge runtime. While ANSWER_ALL is false it
-// answers only the requests that ask for it with the header "X-BSV-Edge: try"; every other request goes on to the
-// function, exactly as before this file existed.
-const ANSWER_ALL = false;
+// It answers every call. Before that it ran a trial on the live address (2026-11-19): it answered only requests that
+// asked for it, and the same 23 requests put to it and to the function came back with the same status and body.
+// The way back stays open: a request that carries the header "X-BSV-Edge: off" is not answered here and goes on to
+// the function, so the two places can still be compared on the live address. Setting ANSWER_ALL to false puts the
+// trial state back (then only requests with "X-BSV-Edge: try" are answered here).
+const ANSWER_ALL = true;
 
 const core = (function () {
   const module = { exports: {} };
@@ -117,7 +119,8 @@ async function callerTag(ip) {
 
 export default async function handler(request, context) {
   try {
-    if (!ANSWER_ALL && request.headers.get("x-bsv-edge") !== "try") return undefined;
+    const asked = request.headers.get("x-bsv-edge");
+    if (asked === "off" || (!ANSWER_ALL && asked !== "try")) return undefined;
     const method = String(request.method || "").toUpperCase();
     const headers = {};
     request.headers.forEach(function (value, name) { headers[name] = value; });
