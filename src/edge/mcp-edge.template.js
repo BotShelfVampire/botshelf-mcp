@@ -1,12 +1,14 @@
 // /api/mcp answered at the edge, close to the caller.
 //
-// GENERATED FILE. Made by world1/steps/w04.py from netlify/functions/_lib/mcpCore.js (the same code the function
-// runs) and site/data/@@INDEX_NAME@@ (the shelf index, held here so that no file has to be fetched to search).
-// Do not edit it by hand: change the core or the index and generate it again.
+// GENERATED FILE. Made by world1/steps/w06.py from netlify/functions/_lib/mcpCore.js (the same code the function
+// runs), site/data/@@INDEX_NAME@@ (the shelf index) and the plain .md item files that index names for its open
+// items. The index and those texts are held in this file, so nothing has to be fetched to search or to read an item.
+// Do not edit it by hand: change the core, the index or an item file and generate it again.
 //
-// It reads nothing but that index and the plain .md item files the index names. It writes nothing, stores nothing,
-// reads no environment value and no secret. If anything in here throws, the request goes on to the function in
-// netlify/functions/mcp.js, which answers the same way (onError: "bypass" below, and the catch in the handler).
+// It makes no request and reads no file. It writes nothing, stores nothing, reads no environment value and no
+// secret. If anything in here throws, the request goes on to the function in netlify/functions/mcp.js, which answers
+// the same way (onError: "bypass" below, and the catch in the handler). An item whose text is not held here is not
+// looked for anywhere else from this file: that request goes on to the function too, which reads the file from the site.
 //
 // It answers every call. Before that it ran a trial on the live address (2026-11-19): it answered only requests that
 // asked for it, and the same 23 requests put to it and to the function came back with the same status and body.
@@ -30,33 +32,24 @@ const core = (function () {
 
 const ORIGIN = "https://botshelfvampire.com";
 const INDEX = JSON.parse("@@INDEX@@");
-const TEXT_TTL = 5 * 60 * 1000, TEXT_KEEP = 30;
+// The item texts. TEXT_ALL holds them one after the other as one string; TEXT.at says, for each file path the index
+// names, where its text starts in that string and how long it is; TEXT.chars is the length of the whole string when
+// the table was made. A string of any other length is not the one the table describes, and is then not used at all.
+const TEXT = JSON.parse("@@TEXT_AT@@");
+const TEXT_ALL = "@@TEXT_ALL@@";
+const TEXT_OK = TEXT_ALL.length === TEXT.chars;
 const BODY_MS = 5000; // how long a request body may take to arrive
-const textCache = new Map();
 
-// The only requests this file makes: one plain .md file of this site, named by the index, when get_item asks for it.
+// The text of an item, taken from this file. Nothing is requested. A path that is not held here throws, and with
+// passFailures below that sends the request on to the function, which reads the file from the site.
 async function loadText(path) {
   if (!core.safeRaw(path)) throw new Error("refused path");
-  const hit = textCache.get(path);
-  if (hit && Date.now() - hit.at < TEXT_TTL) return hit.value;
-  const ctl = new AbortController();
-  const timer = setTimeout(function () { ctl.abort(); }, 8000);
-  let text;
-  try {
-    const res = await fetch(ORIGIN + path, { redirect: "error", signal: ctl.signal, headers: { accept: "text/plain" } });
-    if (!res.ok) throw new Error("status " + res.status);
-    text = await res.text();
-    if (text.length > 4000000) throw new Error("too large"); // the same ceiling as in the function
-  } finally {
-    clearTimeout(timer);
-  }
-  if (text.length > core.LIMITS.fileChars) return text; // too long to serve: the core says so, and it is not kept
-  if (!textCache.has(path) && textCache.size >= TEXT_KEEP) textCache.delete(textCache.keys().next().value);
-  textCache.set(path, { at: Date.now(), value: text });
-  return text;
+  const at = TEXT_OK && Object.prototype.hasOwnProperty.call(TEXT.at, path) ? TEXT.at[path] : null;
+  if (!at) throw new Error("text not held here");
+  return TEXT_ALL.slice(at[0], at[0] + at[1]);
 }
 
-// passFailures: a file that cannot be read here is not answered with an error; the request goes on to the function instead
+// passFailures: a text that is not held here is not answered with an error; the request goes on to the function instead
 const server = core.create({ origin: ORIGIN, via: "edge", passFailures: true, loadIndex: async function () { return INDEX; }, loadText: loadText });
 
 // The request body as { text, bytes }, read from a copy of the stream (the request itself stays unread, in case it has

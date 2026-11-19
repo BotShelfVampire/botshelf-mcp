@@ -20,7 +20,8 @@ https://botshelfvampire.com/api/mcp
 from your browser and shows the reply, the JSON-RPC on the wire and the round-trip time.
 
 **Answered at the edge of the network.** A copy of the same code, close to the caller, answers every call: 0.09 to 0.14 s a call on an open connection,
-seen from Tokyo on 2026-11-19 (10 calls). Every reply names the place that answered in its `X-BSV-Via` header. The whole measurement is under [What has been run](#what-has-been-run).
+seen from Tokyo on 2026-11-19 (10 calls of `ping` and `search_items`). The edge code holds the text of the 1,067 items that have an open text file, beside the shelf index, and requests nothing while it answers.
+Every reply names the place that answered in its `X-BSV-Via` header. The whole measurement is under [What has been run](#what-has-been-run).
 
 [日本語](README.ja.md) · [Page on the site](https://botshelfvampire.com/mcp/) · Transport: Streamable HTTP
 
@@ -124,7 +125,7 @@ The others come back as a card with a link to their page. Counted from the shelf
 
 ## What it reads, keeps and limits
 
-- It reads two kinds of public files from the site: the shelf index and the plain `.md` item files that index names. Nothing else.
+- Its data are two kinds of public files of the site, and nothing else: the shelf index and the plain `.md` item files that index names. The edge code holds a copy of both, put in when the site is deployed, and requests nothing while it answers. The function behind it reads the same two kinds of files from the site.
 - It writes nothing and stores nothing: no account, no cookie, no record of what was asked. To slow abuse, calls are counted per caller in one-minute windows. A keyed one-way hash of the network address identifies each caller. At the edge the key is a random value made when an instance starts and held only in its memory; in the function it is a server-side secret. The count lives in memory only and is dropped when the table is cleaned or the server instance ends.
 - Paid listings are returned as a card with a link. Their text is not served.
 - Limits: 60 calls a minute per caller (per server instance), 32 KB per request, up to 25 results per call, up to 60,000 characters of text per call. Past the call limit: HTTP 429 with `Retry-After`. Too large a request: 413. An argument out of range: a tool error.
@@ -133,7 +134,8 @@ The others come back as a card with a link to their page. Counted from the shelf
 ## What has been run
 
 - **The protocol test** `test/mcp_test.js` (226 checks: lifecycle, the four tools, ranking, suggestions, refusals, limits) passes under Node.js 24 and under bun.
-- **At the edge, from 2026-11-19**: a copy of the same code at the edge of the network answers every call. The function stays in place: it answers when the edge code steps aside, and when a request asks for it with the header `X-BSV-Edge: off`. Before the switch both were answering on the live address and the same 23 requests were put to each: same status and body in all 23. Times seen that evening from one machine in Tokyo: with a new connection for every call (TLS included), a median of 0.93 s through the function and 0.41 s through the edge code (18 calls each); on one open connection, 0.09 to 0.14 s a call through the edge code (10 calls), and through the function 0.34 to 0.40 s for 9 of 10 calls and 1.93 s for its first search. A measurement on one evening, not a promise. `test/edge_diff.mjs` puts the same 550 requests to both and compares the status, headers and body of every reply (2,233 checks), under Node.js 24 and under bun.
+- **At the edge, from 2026-11-19**: a copy of the same code at the edge of the network answers every call. The function stays in place: it answers when the edge code steps aside, and when a request asks for it with the header `X-BSV-Edge: off`. Before the switch both were answering on the live address and the same 23 requests were put to each: same status and body in all 23. Times seen that evening from one machine in Tokyo: with a new connection for every call (TLS included), a median of 0.93 s through the function and 0.41 s through the edge code (18 calls each); on one open connection, 0.09 to 0.14 s a call through the edge code (10 calls), and through the function 0.34 to 0.40 s for 9 of 10 calls and 1.93 s for its first search. A measurement on one evening, not a promise.
+- **Item text held at the edge, from 2026-11-20**: `get_item` is answered from the texts the edge code holds. Until then the edge code fetched an item's file from the site at the first read. An item whose text it does not hold is answered by the function. `test/edge_diff.mjs` puts the same 1,619 requests to the edge code and to the function and compares the status, the headers and the body of every reply; the one header that may differ is `X-BSV-Via`, which names the place that answered (7,592 checks; each of the 1,067 held texts is read through both and compared with its file), under Node.js 24 and under bun.
 - **The live address**: plain HTTP requests for `initialize`, `tools/list` and `search_items` on 2026-11-18 and again on 2026-11-19, and the form on the site, which anyone can press.
 - **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
 - **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each. In a second session the same day, against version 1.1.0, it listed the four tools and called `list_filters`, `search_items` and `get_item`: the session shown above.
@@ -163,9 +165,9 @@ No dependency. It uses the built-in `fetch` (Node.js 18 or newer, or bun) and wa
 | `server.json` | Entry for the MCP Registry (`com.botshelfvampire/botshelf`). |
 | `.mcp.json`, `.claude-plugin/` | Lets Claude Code (and clients that read the same layout) add the server as a plugin. |
 | `src/mcp.js`, `src/_lib/mcpCore.js` | The function as deployed on the site (Netlify function, Node). Published so the read-only claim can be checked. |
-| `src/edge/mcp-edge.template.js` | The edge function, which answers the calls, without its two inserts. The deployed file is this text with `_lib/mcpCore.js` put in at `/*@@CORE@@*/` and the shelf index put in as one string at `"@@INDEX@@"`. |
+| `src/edge/mcp-edge.template.js` | The edge function, which answers the calls, without its inserts. The deployed file is this text with `_lib/mcpCore.js` put in at `/*@@CORE@@*/`, the shelf index as one string at `"@@INDEX@@"`, the item texts as one string at `"@@TEXT_ALL@@"` and the table of where each text stands at `"@@TEXT_AT@@"`. |
 | `test/mcp_test.js` | The protocol test (`node test/mcp_test.js <tree>`; it expects the site's folder layout and replaces `fetch`, so it never touches the network). |
-| `test/edge_diff.mjs` | The comparison of edge code and function (`node test/edge_diff.mjs <tree>`; same layout, no network). |
+| `test/edge_diff.mjs` | The comparison of edge code and function (`node test/edge_diff.mjs <tree>`; same layout, with the generated edge file in it; no network). |
 | `test/live_check.mjs` | The check of the live address described above. The only test here that uses the network. |
 | `assets/session.svg` | The picture at the top: the recorded session, drawn from the client's event stream. |
 

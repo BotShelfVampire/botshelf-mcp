@@ -1,8 +1,10 @@
-// The edge function against the function, request by request (round 03; since round 04 the edge answers every call).
+// The edge function against the function, request by request (round 03; since round 04 the edge answers every call;
+// since round 06 it holds the item texts and requests nothing).
 //   node edge_diff.mjs <tree>          (also runs under bun)
 // Both are loaded from the tree and get the same requests; every reply must be the same in status, headers and
-// body, except for the header that says which of the two answered. Nothing leaves the machine: the function's
-// and the edge function's reads of https://botshelfvampire.com/... are answered from the tree's files.
+// body, except for the header that says which of the two answered. Every text the edge code holds is read through
+// both. Nothing leaves the machine: the function's reads of https://botshelfvampire.com/... are answered from the
+// tree's files, and a request made while the edge code is at work is counted (there must be none).
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import os from "node:os";
@@ -27,6 +29,7 @@ globalThis.fetch = async function (url) {
 };
 
 const fn = require(path.join(tree, "netlify", "functions", "mcp.js"));
+const core = require(path.join(tree, "netlify", "functions", "_lib", "mcpCore.js"));
 const edgeModule = await import(pathToFileURL(path.join(tree, "netlify", "edge-functions", "mcp-edge.js")).href);
 // The edge code answers every request that does not ask for the function (header "X-BSV-Edge: off").
 const edge = { config: edgeModule.config, default: function (request, context) { return edgeModule.default(request, context); } };
@@ -35,7 +38,7 @@ process.on("unhandledRejection", function () { unhandled++; });
 const index = JSON.parse(fs.readFileSync(path.join(tree, "site", fn.INDEX_PATH), "utf8"));
 const rows = index.rows;
 
-let checks = 0, failures = 0, ipN = 0, compared = 0;
+let checks = 0, failures = 0, ipN = 0, compared = 0, edgeAsked = 0;
 const ok = (c, m) => { checks++; if (!c) { failures++; if (failures <= 25) console.error("FAIL", m); } };
 const freshIp = () => "198.51.100." + (++ipN % 250) + "-" + ipN;
 const lower = (h) => { const o = {}; Object.keys(h || {}).forEach((k) => { o[k.toLowerCase()] = String(h[k]); }); return o; };
@@ -46,7 +49,9 @@ async function both(method, headers, body, ip) {
   const fr = await fn.handler({ httpMethod: method, headers: Object.assign({ "x-nf-client-connection-ip": ip }, headers), body: body, isBase64Encoded: false });
   const init = { method: method, headers: headers };
   if (body !== undefined && method !== "GET" && method !== "HEAD") init.body = body;
+  const before = fetched.length; // the function has answered by now: what is asked for from here on, the edge code asks for
   const er = await edge.default(new Request(ORIGIN + "/api/mcp", init), { ip: ip });
+  edgeAsked += fetched.length - before;
   const eh = {};
   if (er) er.headers.forEach((v, k) => { eh[k] = v; });
   return {
@@ -60,8 +65,7 @@ function same(x, label) {
   if (!x.e) { ok(false, label + ": the edge function stepped aside"); return; }
   const fh = Object.assign({}, x.f.headers), eh = Object.assign({}, x.e.headers);
   ok(fh["x-bsv-via"] === "function" && eh["x-bsv-via"] === "edge", label + ": each says which place answered (" + fh["x-bsv-via"] + ", " + eh["x-bsv-via"] + ")");
-  delete fh["x-bsv-via"]; delete eh["x-bsv-via"];
-  if (x.f.body === "") { delete fh["content-type"]; delete eh["content-type"]; } // an empty reply has no type to compare
+  delete fh["x-bsv-via"]; delete eh["x-bsv-via"]; // the one header that is meant to differ; every other header is compared
   ok(x.f.status === x.e.status, label + ": status " + x.f.status + " / " + x.e.status);
   ok(JSON.stringify(Object.keys(fh).sort().map((k) => [k, fh[k]])) === JSON.stringify(Object.keys(eh).sort().map((k) => [k, eh[k]])),
     label + ": headers differ: " + JSON.stringify(fh) + " / " + JSON.stringify(eh));
@@ -148,10 +152,27 @@ for (let i = 0; i < 60; i++) {
   same(await both("POST", J, call("get_item", { id: r.u, max_chars: 500 + rnd(3000), offset: rnd(4) === 0 ? rnd(2000) : 0 })), "random get_item " + r.u);
 }
 
-// --- the limit of 60 calls a minute, counted per caller in each place
+// --- the limit of 60 calls a minute, counted per caller in each place. The clock is held here: it stands still while
+// this caller makes its 61 calls, so that both places count the same minute and name the same wait in Retry-After;
+// then it is moved on by hand, to see the wait get shorter and the limit end with the minute, in both places.
 const ip = "198.51.100.77-limit";
 let codes = [];
-for (let i = 0; i < 61; i++) { const x = await both("POST", J, rpc(i, "ping"), ip); codes.push([x.f.status, x.e.status]); if (i === 60) same(Object.assign(x, { f: Object.assign(x.f, { headers: Object.assign(x.f.headers, { "retry-after": x.e.headers["retry-after"] }) }) }), "call 61"); }
+const realNow = Date.now;
+let clock = Date.now();
+Date.now = () => clock;
+try {
+  for (let i = 0; i < 61; i++) { const x = await both("POST", J, rpc(i, "ping"), ip); codes.push([x.f.status, x.e.status]); if (i === 60) { same(x, "call 61"); ok(x.f.headers["retry-after"] === "60" && x.e.headers["retry-after"] === "60", "call 61: both name the wait (" + x.f.headers["retry-after"] + ", " + x.e.headers["retry-after"] + ")"); } }
+  clock += 1001;
+  const later = await both("POST", J, rpc(61, "ping"), ip);
+  same(later, "call 62, a second later");
+  ok(later.f.status === 429 && later.f.headers["retry-after"] === "59" && later.e.headers["retry-after"] === "59", "a second later both still refuse, and name a wait one second shorter (" + later.f.headers["retry-after"] + ", " + later.e.headers["retry-after"] + ")");
+  clock += 59000;
+  const after = await both("POST", J, rpc(62, "ping"), ip);
+  same(after, "the call after the minute");
+  ok(after.f.status === 200 && after.e.status === 200, "once the minute is over the caller is let in again, in both places (" + after.f.status + ", " + after.e.status + ")");
+} finally {
+  Date.now = realNow;
+}
 ok(codes.slice(0, 60).every((c) => c[0] === 200 && c[1] === 200) && codes[60][0] === 429 && codes[60][1] === 429, "60 calls pass and the 61st is refused, in both places");
 const other = await both("POST", J, rpc(1, "ping"));
 ok(other.f.status === 200 && other.e.status === 200, "another caller is not affected");
@@ -181,19 +202,68 @@ r1 = await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", heade
 globalThis.setTimeout = realST;
 ok(r1 && r1.status === 408 && performance.now() - tA < 2000, "a body that never comes: 408 when the time is up (" + (r1 && r1.status) + ")");
 
-// --- a file that cannot be read at the edge: the edge steps aside, the function answers
+// --- the site's files out of reach: the edge code holds the texts and still answers; the function, which reads the file, cannot
 const cold = rows.filter((r) => r.k === "grokbot" && r.raw)[5];
 mdFails = true;
 let ex = await both("POST", J, call("get_item", { id: cold.u }));
-ok(ex.e === null && ex.f.status === 200 && JSON.parse(ex.f.body).result.isError === true, "a file that cannot be fetched: the edge steps aside (the function, without the file either, says so)");
+ok(ex.e && ex.e.status === 200 && JSON.parse(ex.e.body).result.isError === false && ex.f.status === 200 && JSON.parse(ex.f.body).result.isError === true,
+  "the item files out of reach: the edge code answers from the text it holds (the function, without the file, says it could not read it)");
 mdFails = false;
 ex = await both("POST", J, call("get_item", { id: cold.u }));
-ok(ex.e && ex.e.status === 200 && JSON.parse(ex.e.body).result.isError === false && ex.f.body === ex.e.body, "and once the file can be fetched again, both answer with it");
+ok(ex.e && ex.e.status === 200 && JSON.parse(ex.e.body).result.isError === false && ex.f.body === ex.e.body, "and once the file can be read again, both answer with the same text");
 mdHuge = true;
 const cold2 = rows.filter((r) => r.k === "grokbot" && r.raw)[6];
 ex = await both("POST", J, call("get_item", { id: cold2.u }));
-ok(ex.e === null && JSON.parse(ex.f.body).result.isError === true, "a file past the fetch ceiling: the edge steps aside, the function says it could not read it");
+ok(ex.e && JSON.parse(ex.e.body).result.isError === false && JSON.parse(ex.f.body).result.isError === true, "a file that comes back far too large: the edge code does not ask for it and answers; the function says it could not read it");
 mdHuge = false;
+
+// --- every text the edge code holds: read whole through both places, and held against the file itself
+const src = fs.readFileSync(path.join(tree, "netlify", "edge-functions", "mcp-edge.js"), "utf8");
+// where the data stand in the file: three string literals. Each is found by its declaration, which must be there once,
+// and read as a literal: from its opening quote to the first quote that no backslash escapes, with no line break inside,
+// and with nothing after it on its line but the end of the declaration.
+function literal(open, close) {
+  const a = src.indexOf(open);
+  if (a < 0 || src.indexOf(open, a + 1) >= 0 || src[a + open.length] !== '"') return null;
+  for (let i = a + open.length + 1; i < src.length; i++) {
+    const c = src.charCodeAt(i);
+    if (c === 92) { const d = src.charCodeAt(i + 1); if (!(d >= 0) || d === 10 || d === 13) return null; i++; }
+    else if (c === 10 || c === 13) return null;
+    else if (c === 34) return src.startsWith(close, i + 1) ? [a + open.length, i + 1] : null;
+  }
+  return null;
+}
+const idxSpan = literal("\nconst INDEX = JSON.parse(", ");\n");
+const atSpan = literal("\nconst TEXT = JSON.parse(", ");\n");
+const allSpan = literal("\nconst TEXT_ALL = ", ";\n");
+const tableLit = atSpan ? src.slice(atSpan[0], atSpan[1]) : '"{}"';
+const table = Object.assign({ at: {}, chars: -1, files: -1 }, JSON.parse(JSON.parse(tableLit)));
+ok(idxSpan && atSpan && allSpan && idxSpan[1] < atSpan[0] && atSpan[1] < allSpan[0] && JSON.parse(src.slice(allSpan[0], allSpan[1])).length === table.chars,
+  "the edge file holds the index, one table of texts and one string of texts, in that order, and the string is of the length the table gives (" + table.chars + " characters)");
+const withText = rows.filter((r) => r.a === "open" && core.safeRaw(r.raw) && fs.existsSync(path.join(tree, "site", r.raw)));
+const held = Object.keys(table.at);
+ok(withText.length > 0 && held.length === withText.length && table.files === held.length && withText.every((r) => Object.prototype.hasOwnProperty.call(table.at, r.raw)),
+  "the edge file holds a text for every open item that has a text file, and for nothing else (" + held.length + " held, " + withText.length + " such items)");
+ok(rows.every((r) => r.a === "open" || !r.raw || !Object.prototype.hasOwnProperty.call(table.at, r.raw)), "no text of a paid listing is held");
+const spans = held.map((k) => table.at[k]).sort((a, b) => a[0] - b[0]);
+let end = 0, tidy = spans.every((s) => Array.isArray(s) && s.length === 2 && Number.isInteger(s[0]) && Number.isInteger(s[1]) && s[1] > 0);
+for (const s of spans) { if (s[0] !== end) tidy = false; end = s[0] + s[1]; }
+ok(tidy && end === table.chars, "the table of texts has no gap and no overlap, and ends where the string of texts ends (" + end + " characters)");
+let parts = 0;
+for (const r of withText) {
+  const file = fs.readFileSync(path.join(tree, "site", r.raw), "utf8");
+  // a text longer than one call returns is read on, part after part, until there is no next part
+  let offset = 0, whole = "", total = -1, read = true;
+  for (let n = 0; offset !== null && n < 50; n++) {
+    const x = await both("POST", J, call("get_item", offset ? { id: r.u, max_chars: 60000, offset: offset } : { id: r.u, max_chars: 60000 }));
+    same(x, "held text " + r.u + (offset ? " from " + offset : ""));
+    parts++;
+    const d = x.e ? JSON.parse(x.e.body).result.structuredContent : null;
+    if (!d || typeof d.text !== "string") { read = false; break; }
+    whole += d.text; total = d.total_chars; offset = d.next_offset;
+  }
+  ok(read && offset === null && whole === file && total === file.length, "held text " + r.u + ": the edge code returns the file's text, whole");
+}
 
 // --- bytes that are not valid UTF-8: counted as they came, in both places
 const rawBytes = Buffer.concat([Buffer.from('{"jsonrpc":"2.0","id":1,"method":"ping","params":{"x":"'), Buffer.alloc(11000, 0xff), Buffer.from('"}}')]);
@@ -230,13 +300,48 @@ fetched = [];
 await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: call("search_items", { query: "code review" }) }), { ip: freshIp() });
 await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: call("list_filters", {}) }), { ip: freshIp() });
 ok(fetched.length === 0, "searching and listing read no file at the edge (" + fetched.length + " requests)");
-await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: call("get_item", { id: openRow.u }) }), { ip: freshIp() });
-ok(fetched.length === 1 && fetched[0] === ORIGIN + openRow.raw, "get_item reads the one .md file the index names, nothing else: " + fetched.join(", "));
-const src = fs.readFileSync(path.join(tree, "netlify", "edge-functions", "mcp-edge.js"), "utf8");
-const code = src.slice(0, src.indexOf("const INDEX = JSON.parse(")) + src.slice(src.indexOf("const TEXT_TTL"));
-ok(!/process\.env|Netlify\.env|Deno\.env|require\(|import\s*\(|from\s+["']|localStorage|document\.|eval\(|new Function/.test(code.replace(/\/\/[^\n]*/g, "")), "the edge file reads no environment value, loads no module and builds no code");
+const alone = await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: call("get_item", { id: openRow.u }) }), { ip: freshIp() });
+ok(alone && alone.status === 200 && JSON.parse(await alone.text()).result.structuredContent.text.length > 0 && fetched.length === 0, "get_item reads no file at the edge either: the text comes from the edge file (" + fetched.length + " requests)");
+ok(edgeAsked === 0, "in every request above that was put to both, the edge code asked for nothing (" + edgeAsked + " requests)");
+// the code: the whole file but for the three literals (what stands between them stays), comments included. Nothing is
+// taken out before the words below are looked for: telling a comment from two slashes inside a string, a block comment
+// or a template literal would take a parser, and what was taken out by mistake could hide code. The comments of the
+// file do not use these words.
+const code = idxSpan && atSpan && allSpan ? src.slice(0, idxSpan[0]) + src.slice(idxSpan[1], atSpan[0]) + src.slice(atSpan[1], allSpan[0]) + src.slice(allSpan[1]) : src;
+const bare = code;
+ok(src.indexOf("\r") < 0, "the edge file has no carriage return: its lines end the way the checks expect");
+ok(code.length < 80000 && code.indexOf("\nconst INDEX = JSON.parse();\n") > 0 && code.indexOf("\nconst TEXT = JSON.parse();\nconst TEXT_ALL = ;\nconst TEXT_OK = TEXT_ALL.length === TEXT.chars;\n") > 0,
+  "the edge file without its three literals is code only (" + code.length + " characters)");
+ok(!/process\.env|Netlify\.env|Deno\.|require\(|import\s*\(|from\s+["']|localStorage|document\.|eval\(|new Function/.test(bare), "the edge file reads no environment value, loads no module and builds no code");
 ok(/\nconst ANSWER_ALL = true;\n/.test(code) && code.indexOf('if (asked === "off" || (!ANSWER_ALL && asked !== "try")) return undefined;') > 0, "the edge file answers every call and steps aside when asked to");
-ok((code.match(/\bfetch\(/g) || []).length === 1 && /fetch\(ORIGIN \+ path,/.test(code), "the edge file makes one kind of request: a file of this site");
+ok(!/\bfetch\b|XMLHttpRequest|WebSocket|EventSource|sendBeacon|\bcaches\b|\.connect\(|\bopen\(/.test(bare), "the edge file makes no request of any kind");
+
+// --- a text that is not held, and a string of texts of another length than its table: the edge code steps aside for the function
+async function variant(change, name) {
+  const text = change(src);
+  const file = path.join(os.tmpdir(), "bsv-edge-" + name + "-" + process.pid + ".mjs");
+  fs.writeFileSync(file, text);
+  try { return { text: text, mod: await import(pathToFileURL(file).href) }; } finally { fs.unlinkSync(file); }
+}
+const lit = (o) => JSON.stringify(JSON.stringify(o)).replace(/[\u007f-\uffff]/g, (c) => "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4));
+const askEdge = (mod, body) => mod.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: body }), { ip: freshIp() });
+const less = JSON.parse(JSON.stringify(table));
+delete less.at[cold.raw];
+less.files--;
+const v1 = await variant((s) => s.slice(0, atSpan[0]) + lit(less) + s.slice(atSpan[1]), "less");
+fetched = [];
+ok(v1.text !== src && (await askEdge(v1.mod, call("get_item", { id: cold.u }))) === undefined && fetched.length === 0, "a text the edge file does not hold: the edge code steps aside and asks for nothing");
+let vr = await askEdge(v1.mod, call("get_item", { id: openRow.u }));
+ok(vr && vr.status === 200 && JSON.parse(await vr.text()).result.isError === false, "and still answers for a text it holds");
+const longer = JSON.parse(JSON.stringify(table));
+longer.chars++;
+const v2 = await variant((s) => s.slice(0, atSpan[0]) + lit(longer) + s.slice(atSpan[1]), "length");
+ok(v2.text !== src && (await askEdge(v2.mod, call("get_item", { id: openRow.u }))) === undefined && (await askEdge(v2.mod, call("get_item", { id: cold.u }))) === undefined && fetched.length === 0,
+  "a string of texts of another length than its table says: no text is taken from it, the edge code steps aside");
+vr = await askEdge(v2.mod, call("search_items", { query: "code review" }));
+const vp = await askEdge(v2.mod, call("get_item", { id: paidRow.u }));
+ok(vr && vr.status === 200 && JSON.parse(await vr.text()).result.isError === false && vp && vp.status === 200 && JSON.parse(await vp.text()).result.structuredContent.text === null,
+  "and it still answers what needs no text: a search, and the card of a paid listing");
 
 // --- the switch thrown back (ANSWER_ALL false), as during the trial: only a request that asks with "X-BSV-Edge: try" is answered
 const backSrc = src.replace("\nconst ANSWER_ALL = true;\n", "\nconst ANSWER_ALL = false;\n");
@@ -262,6 +367,12 @@ for (let i = 0; i < 200; i++) await edge.default(new Request(ORIGIN + "/api/mcp"
 const per = (performance.now() - t0) / 200;
 console.log("edge handler, 200 two-word searches: " + per.toFixed(2) + " ms each on this machine (work only, no network)");
 ok(per < 25, "a search costs far less than the 50 ms the edge allows");
+const t1 = performance.now();
+for (let i = 0; i < 200; i++) await edge.default(new Request(ORIGIN + "/api/mcp", { method: "POST", headers: J, body: call("get_item", { id: withText[rnd(withText.length)].u }) }), { ip: "g-" + i });
+const perGet = (performance.now() - t1) / 200;
+console.log("edge handler, 200 get_item calls for different items: " + perGet.toFixed(2) + " ms each on this machine (work only, no network)");
+ok(perGet < 25, "reading an item costs far less than the 50 ms the edge allows");
+ok(parts >= withText.length, "every held text was read to its end (" + parts + " parts for " + withText.length + " texts)");
 
 console.log(failures ? "FAILED " + failures + " of " + checks : "PASS " + checks + " checks, " + compared + " requests compared");
 if (failures) process.exit(1);
