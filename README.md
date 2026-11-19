@@ -1,5 +1,7 @@
 # BotShelf Vampire MCP server (read-only)
 
+[![mcptry: live status and score](https://mcptry.com/badge/com.botshelfvampire/botshelf)](https://mcptry.com/servers/com.botshelfvampire/botshelf)
+
 A remote [Model Context Protocol](https://modelcontextprotocol.io) server for the public shelf at [botshelfvampire.com](https://botshelfvampire.com/):
 free AI teams, Build Library recipes, agent toolkits, unofficial Grok Bot tools, trading tools and guides.
 Your AI tool can search the shelf and read the full text of the free items. It cannot change anything.

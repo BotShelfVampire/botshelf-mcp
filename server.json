@@ -8,7 +8,16 @@
     "source": "github"
   },
   "websiteUrl": "https://botshelfvampire.com/mcp/",
-  "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://botshelfvampire.com/img/mark.jpg",
+      "mimeType": "image/jpeg",
+      "sizes": [
+        "256x256"
+      ]
+    }
+  ],
+  "version": "1.0.1",
   "remotes": [
     {
       "type": "streamable-http",

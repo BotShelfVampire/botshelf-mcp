@@ -1,5 +1,7 @@
 # BotShelf Vampire MCP サーバー（読み取り専用）
 
+[![mcptry: live status and score](https://mcptry.com/badge/com.botshelfvampire/botshelf)](https://mcptry.com/servers/com.botshelfvampire/botshelf)
+
 [botshelfvampire.com](https://botshelfvampire.com/) の公開の棚（無料のAIチーム、Build Library のレシピ、エージェント用ツールキット、非公式の Grok Bot の道具、トレードの道具とガイド）を読むための、
 リモートの [Model Context Protocol](https://modelcontextprotocol.io) サーバーです。AIツールから棚を検索し、無料の項目の全文を読めます。何かを変更することはできません。
 
