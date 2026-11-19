@@ -1,8 +1,8 @@
 {
   "name": "botshelf-mcp",
   "displayName": "BotShelf Vampire (read-only MCP)",
-  "version": "1.0.0",
-  "description": "Search the BotShelf Vampire shelf and read the full text of its free items through a read-only remote MCP server.",
+  "version": "1.0.1",
+  "description": "Search the BotShelf Vampire shelf and read the full text of the free items that have a text file, through a read-only remote MCP server. No account, no key.",
   "author": {
     "name": "BotShelf Vampire",
     "url": "https://botshelfvampire.com"

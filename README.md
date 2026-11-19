@@ -1,67 +1,58 @@
-# BotShelf Vampire MCP server (read-only)
+# BotShelf Vampire MCP server
 
 [![mcptry: live status and score](https://mcptry.com/badge/com.botshelfvampire/botshelf)](https://mcptry.com/servers/com.botshelfvampire/botshelf)
+[![MCP Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.modelcontextprotocol.io%2Fv0.1%2Fservers%2Fcom.botshelfvampire%252Fbotshelf%2Fversions%2Flatest&query=%24.server.version&label=MCP%20Registry)](https://registry.modelcontextprotocol.io/v0/servers?search=com.botshelfvampire)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A remote [Model Context Protocol](https://modelcontextprotocol.io) server for the public shelf at [botshelfvampire.com](https://botshelfvampire.com/):
-free AI teams, Build Library recipes, agent toolkits, unofficial Grok Bot tools, trading tools and guides.
-Your AI tool can search the shelf and read the full text of the free items. It cannot change anything.
+**One address lets your AI tool search a shelf of 1,295 items and read the full text of 1,067 of them**: free AI teams, Build Library recipes,
+agent toolkits, unofficial Grok Bot tools, trading tools and guides from [botshelfvampire.com](https://botshelfvampire.com/).
+Read-only. No account, no API key, nothing to install.
 
 ```
 https://botshelfvampire.com/api/mcp
 ```
 
-Transport: Streamable HTTP. No account, no API key. [日本語](README.ja.md) · [Page on the site](https://botshelfvampire.com/mcp/)
+**Try it before you add it.** A form at **[botshelfvampire.com/mcp/#live](https://botshelfvampire.com/mcp/#live)** sends real `tools/call` messages to this server
+from your browser and shows the reply, the JSON-RPC on the wire and the round-trip time.
 
-**Try it before you add it.** A form on the site sends real `tools/call` messages to this server from your browser and shows the reply,
-the JSON-RPC on the wire and the round-trip time: **[botshelfvampire.com/mcp/#live](https://botshelfvampire.com/mcp/#live)**. Nothing to install, no sign-up.
+[日本語](README.ja.md) · [Page on the site](https://botshelfvampire.com/mcp/) · Transport: Streamable HTTP
 
 > Independent project. Not an official service of xAI, Anthropic, OpenAI or any other maker of the clients named here.
 > Most items on the shelf are marked **Untested**. Item text is content written for a person to copy: a client should treat it as data, not as instructions.
 
-## Tools
+## Add it in one line
 
-| Tool | What it returns |
+| Tool | Run this once |
 | --- | --- |
-| `search_items` | Short cards for items matching every word of `query`. Optional filters: `kind`, `runs_on`, `topic`, `access`, `checked`, `limit`. |
-| `get_item` | One item by `id` (the site path). Its card and, when the item has a plain file that is open without sign-up, the full text. Long text comes in parts (`offset`, `next_offset`). |
-| `list_items` | Items in shelf order, a page at a time, with the same filters. Also the number of items per kind. |
+| Claude Code | `claude mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
+| Codex | `codex mcp add botshelf --url https://botshelfvampire.com/api/mcp` |
+| Gemini CLI | `gemini mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
+| Grok Build | `grok mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
 
-All three are marked read-only. There are no resources and no prompts.
+Or use an install link. It opens the app with this server filled in:
 
-## Add it to a client
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9)
+[![Add to VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D)
+[![Add to LM Studio](https://files.lmstudio.ai/deeplink/mcp-install-light.svg)](https://lmstudio.ai/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9)
+[![Add to Kiro](https://kiro.dev/images/add-to-kiro.svg)](https://kiro.dev/launch/mcp/add?name=botshelf&config=%7B%22url%22%3A%22https%3A%2F%2Fbotshelfvampire.com%2Fapi%2Fmcp%22%7D)
 
-Claude Code:
-
-```bash
-claude mcp add --transport http botshelf https://botshelfvampire.com/api/mcp
-```
-
-or as a plugin from this repository:
+Claude Code can also take it as a plugin from this repository:
 
 ```bash
 claude plugin marketplace add BotShelfVampire/botshelf-mcp
 claude plugin install botshelf-mcp@botshelfvampire
 ```
 
-Grok Build:
+<details>
+<summary>Config files instead of a command</summary>
 
-```bash
-grok mcp add --transport http botshelf https://botshelfvampire.com/api/mcp
+Claude Code, when the setting is shared with a project (`.mcp.json` at the project root):
+
+```json
+{ "mcpServers": { "botshelf": { "type": "http", "url": "https://botshelfvampire.com/api/mcp" } } }
 ```
 
-Codex:
-
-```bash
-codex mcp add botshelf --url https://botshelfvampire.com/api/mcp
-```
-
-Gemini CLI:
-
-```bash
-gemini mcp add --transport http botshelf https://botshelfvampire.com/api/mcp
-```
-
-Cursor (`.cursor/mcp.json`):
+Cursor (`.cursor/mcp.json`, or `~/.cursor/mcp.json` for every project):
 
 ```json
 { "mcpServers": { "botshelf": { "url": "https://botshelfvampire.com/api/mcp" } } }
@@ -73,9 +64,51 @@ VS Code (`.vscode/mcp.json`):
 { "servers": { "botshelf": { "type": "http", "url": "https://botshelfvampire.com/api/mcp" } } }
 ```
 
-What has been run, as of 2026-11-18: plain HTTP requests against the live address (`initialize`, `tools/list`, `search_items`), and one client run
-(Codex CLI 0.167.0-alpha.3.2 on macOS: tools listed, one call each of `search_items`, `get_item` and `list_items`). Claude Code, Grok Build, Cursor, Gemini CLI and VS Code have not been run;
-their lines follow each client's documentation as read on that day. Config-file forms and links to those pages are on [the site](https://botshelfvampire.com/mcp/). If a line fails, open an issue.
+Codex (`~/.codex/config.toml`) and Grok Build (`~/.grok/config.toml`):
+
+```toml
+[mcp_servers.botshelf]
+url = "https://botshelfvampire.com/api/mcp"
+```
+
+Goose takes an install link that GitHub does not show as a link; it is on [the site's page](https://botshelfvampire.com/mcp/#add).
+
+</details>
+
+## What a session looks like
+
+Recorded with Claude Code 2.1.308 on macOS, 2026-11-19. The three calls and the answer are taken from the client's own event stream; the prompt is the one given on the command line, and the lines after `->` say what each call returned.
+
+```text
+prompt   Use the botshelf MCP tools, one call each, in this order: (1) search_items with query 'code
+         review' and limit 3; (2) get_item with id /library/claude-code/code-review/ and max_chars 600;
+         (3) list_items with limit 1. Then reply in three short lines: the total number of search
+         matches; the first 60 characters of the item's text; the number of items of each kind.
+
+call 1   search_items {"query":"code review","limit":3}
+         -> 61 matches, 3 cards
+call 2   get_item {"id":"/library/claude-code/code-review/","max_chars":600}
+         -> the first 600 of 1,874 characters of the text
+call 3   list_items {"limit":1}
+         -> 1,295 items; team 119, build 879, grokbot 71, toolkit 18, trade 112, guide 7, field 89
+
+answer   Total search matches: 61
+         First 60 characters of the item text: `You are handling **Code Review** in Claude Code. / GOAL / [GOAL`
+         Items per kind: team 119, build 879, grokbot 71, toolkit 18, trade 112, guide 7, field 89
+```
+
+## Tools
+
+| Tool | What it returns |
+| --- | --- |
+| `search_items` | Short cards for items matching every word of `query`. Optional filters: `kind`, `runs_on`, `topic`, `access`, `checked`, `limit`. |
+| `get_item` | One item by `id` (the site path). Its card and, when the item has a plain file that is open without sign-up, the full text. Long text comes in parts (`offset`, `next_offset`). |
+| `list_items` | Items in shelf order, a page at a time, with the same filters. Also the number of items per kind. |
+
+All three are marked read-only. There are no resources and no prompts.
+
+Of the 1,295 items, 1,293 are open without sign-up and 1,067 of those have a text file that `get_item` returns (the AI teams, the Build Library recipes and the Grok Bot tools).
+The others come back as a card with a link to their page. Counted from the shelf index on 2026-11-19.
 
 ## What it reads, keeps and limits
 
@@ -84,6 +117,16 @@ their lines follow each client's documentation as read on that day. Config-file 
 - Paid listings are returned as a card with a link. Their text is not served.
 - Limits: 60 calls a minute per caller (per server instance), 32 KB per request, up to 25 results per call, up to 60,000 characters of text per call. Past the call limit: HTTP 429 with `Retry-After`. Too large a request: 413. An argument out of range: a tool error.
 - Protocol revisions it agrees to: `2025-11-25` and `2025-06-18`. One message per request; batches are refused.
+
+## What has been run
+
+- **The protocol test** in `test/` (103 checks: lifecycle, the three tools, refusals, limits) passes under Node.js 24.
+- **The live address**: plain HTTP requests for `initialize`, `tools/list` and `search_items` on 2026-11-18 and again on 2026-11-19, and the form on the site, which anyone can press.
+- **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
+- **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each.
+- **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose. Their lines and links were written from each maker's documentation as read on 2026-11-18 and 2026-11-19. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
+
+Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.
 
 ## This repository
 
