@@ -102,8 +102,7 @@ same(await both("POST", J, rpc(2, "initialize", {})), "initialize without a vers
 same(await both("POST", J, rpc(2, "initialize")), "initialize without params");
 same(await both("POST", J, JSON.stringify({ jsonrpc: "2.0", id: 2, method: "ping", params: false })), "params not structured");
 same(await both("POST", J, rpc(4, "tools/list")), "tools/list");
-same(await both("POST", J, rpc(4, "resources/list")), "undeclared capability");
-same(await both("POST", J, rpc(4, "prompts/list")), "undeclared capability 2");
+for (const m of ["resources/subscribe", "completion/complete", "logging/setLevel"]) same(await both("POST", J, rpc(4, m, {})), "a method that is not offered: " + m);
 
 // --- the tools, with good and bad arguments
 const openRow = rows.find((r) => r.k === "build" && r.raw), paidRow = rows.find((r) => r.a !== "open"), noFile = rows.find((r) => r.a === "open" && !r.raw);
@@ -126,6 +125,24 @@ const toolCases = [
 ];
 for (const [name, args] of toolCases) same(await both("POST", J, call(name, args)), "tools/call " + JSON.stringify(name) + " " + JSON.stringify(args).slice(0, 70));
 same(await both("POST", J, rpc(9, "tools/call", ["search_items"])), "positional params");
+
+// --- prompts and resources (1.2.0): the same lists, the same messages and the same texts from both places
+same(await both("POST", J, rpc(4, "prompts/list")), "prompts/list");
+same(await both("POST", J, rpc(4, "prompts/list", { cursor: "x" })), "prompts/list with a cursor");
+for (const [name, args] of [["find_item", { job: "review a pull request" }], ["find_item", { job: "meeting\nnotes", runs_on: "Claude Code" }], ["use_item", { id: openRow.u }], ["shelf_overview", undefined],
+  ["shelf_overview", {}], ["find_item", {}], ["find_item", { job: 5 }], ["find_item", { job: "x", extra: "y" }], ["find_item", ["x"]], ["no_such_prompt", {}], [7, {}]]) {
+  same(await both("POST", J, rpc(5, "prompts/get", args === undefined ? { name: name } : { name: name, arguments: args })), "prompts/get " + JSON.stringify(name) + " " + JSON.stringify(args));
+}
+same(await both("POST", J, rpc(5, "prompts/get", ["find_item"])), "prompts/get with positional params");
+same(await both("POST", J, rpc(4, "resources/list")), "resources/list");
+same(await both("POST", J, rpc(4, "resources/templates/list")), "resources/templates/list");
+same(await both("POST", J, rpc(4, "resources/templates/list", { cursor: "x" })), "resources/templates/list with a cursor");
+for (const uri of ["botshelf://shelf/overview", "botshelf://shelf/guide", "botshelf://item" + openRow.u, "botshelf://item" + openRow.u + "?lang=ja", "botshelf://item" + paidRow.u, "botshelf://item" + noFile.u,
+  "botshelf://item/nope/", "botshelf://item", "botshelf://shelf/secrets", "file:///etc/passwd", "botshelf://item/../netlify.toml", "", "botshelf://item/" + "a".repeat(500)]) {
+  same(await both("POST", J, rpc(6, "resources/read", { uri: uri })), "resources/read " + JSON.stringify(uri).slice(0, 70));
+}
+same(await both("POST", J, rpc(6, "resources/read", {})), "resources/read without an address");
+same(await both("POST", J, rpc(6, "resources/read", { uri: 5 })), "resources/read with an address that is not a string");
 
 // --- many searches made from the shelf's own words: the same answers, in the same order
 let seed = 20261119;
@@ -208,6 +225,9 @@ mdFails = true;
 let ex = await both("POST", J, call("get_item", { id: cold.u }));
 ok(ex.e && ex.e.status === 200 && JSON.parse(ex.e.body).result.isError === false && ex.f.status === 200 && JSON.parse(ex.f.body).result.isError === true,
   "the item files out of reach: the edge code answers from the text it holds (the function, without the file, says it could not read it)");
+ex = await both("POST", J, rpc(6, "resources/read", { uri: "botshelf://item" + cold.u }));
+ok(ex.e && ex.e.status === 200 && typeof JSON.parse(ex.e.body).result.contents[0].text === "string" && JSON.parse(ex.f.body).error.code === -32603,
+  "the same for a resource read: the edge code answers with the text, the function with an error");
 mdFails = false;
 ex = await both("POST", J, call("get_item", { id: cold.u }));
 ok(ex.e && ex.e.status === 200 && JSON.parse(ex.e.body).result.isError === false && ex.f.body === ex.e.body, "and once the file can be read again, both answer with the same text");
@@ -263,6 +283,10 @@ for (const r of withText) {
     whole += d.text; total = d.total_chars; offset = d.next_offset;
   }
   ok(read && offset === null && whole === file && total === file.length, "held text " + r.u + ": the edge code returns the file's text, whole");
+  const y = await both("POST", J, rpc(6, "resources/read", { uri: "botshelf://item" + r.u }));
+  same(y, "held text as a resource " + r.u);
+  const c = y.e ? JSON.parse(y.e.body).result : null;
+  ok(c && c.contents.length === 1 && (file.length <= core.LIMITS.textMax ? c.contents[0].text === file : c.contents[0].text.indexOf(file.slice(0, core.LIMITS.textMax)) === 0), "held text as a resource " + r.u + ": the file's text");
 }
 
 // --- bytes that are not valid UTF-8: counted as they came, in both places
@@ -331,6 +355,7 @@ less.files--;
 const v1 = await variant((s) => s.slice(0, atSpan[0]) + lit(less) + s.slice(atSpan[1]), "less");
 fetched = [];
 ok(v1.text !== src && (await askEdge(v1.mod, call("get_item", { id: cold.u }))) === undefined && fetched.length === 0, "a text the edge file does not hold: the edge code steps aside and asks for nothing");
+ok((await askEdge(v1.mod, rpc(6, "resources/read", { uri: "botshelf://item" + cold.u }))) === undefined && fetched.length === 0, "the same for a resource read of that item");
 let vr = await askEdge(v1.mod, call("get_item", { id: openRow.u }));
 ok(vr && vr.status === 200 && JSON.parse(await vr.text()).result.isError === false, "and still answers for a text it holds");
 const longer = JSON.parse(JSON.stringify(table));

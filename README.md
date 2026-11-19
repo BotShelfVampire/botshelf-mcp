@@ -7,6 +7,7 @@
 **One address lets your AI tool search a shelf of 1,295 items and read the full text of 1,067 of them**: free AI teams, Build Library recipes,
 agent toolkits, unofficial Grok Bot tools, trading tools and guides from [botshelfvampire.com](https://botshelfvampire.com/).
 Read-only. No account, no API key, nothing to install.
+4 tools, 3 prompts, 2 resources and a template that reads one item; every tool declares the shape of its replies.
 
 ```
 https://botshelfvampire.com/api/mcp
@@ -119,10 +120,28 @@ The picture at the top is this session: Claude Code 2.1.308 on macOS, 2026-11-19
 | `list_items` | Items in shelf order, a page at a time, with the same filters. Also the number of items per kind. |
 | `list_filters` | The values the filters accept: the kinds, the where-it-runs names and the topics in use, each with its number of items. |
 
-All four are marked read-only. There are no resources and no prompts. Search puts whole-word matches first; when no item matches every word, the reply carries `suggestions`, the items that match most of the words.
+All four are marked read-only, and each declares the shape of what it returns (`outputSchema`), so that a client can check a reply before it uses it. Search puts items first in which every word of the query stands at the start of a word; when no item matches every word but some match part of them, the reply carries `suggestions`, the items that match most of the words.
 
 Of the 1,295 items, 1,293 are open without sign-up and 1,067 of those have a text file that `get_item` returns (the AI teams, the Build Library recipes and the Grok Bot tools).
 The others come back as a card with a link to their page. Counted from the shelf index on 2026-11-19.
+
+## Prompts and resources
+
+Since version 1.2.0 the server also offers three prompts and two resources, for clients that show them.
+
+| Prompt | What it asks your AI tool to do |
+| --- | --- |
+| `find_item` (job, runs_on) | Search the shelf for a job you describe, compare the best matches and read the best one. |
+| `use_item` (id) | Read one item's full text and walk through using it. |
+| `shelf_overview` | Summarise what the shelf holds: kinds, where items run, topics, how many are open. |
+
+In Claude Code the prompts show up as slash commands: `/mcp__botshelf__find_item` when the server was added under the name `botshelf`.
+
+| Resource | What it is |
+| --- | --- |
+| `botshelf://shelf/overview` | What the shelf holds, as JSON: the same data `list_filters` returns. |
+| `botshelf://shelf/guide` | A short guide to this server, as Markdown. |
+| `botshelf://item{+id}` | A template: one item by its id, for example `botshelf://item/library/claude-code/code-review/`. An open item with a plain file comes as its text; any other item as a few lines with its title, summary and page. |
 
 ## What it reads, keeps and limits
 
@@ -134,12 +153,12 @@ The others come back as a card with a link to their page. Counted from the shelf
 
 ## What has been run
 
-- **The protocol test** `test/mcp_test.js` (226 checks: lifecycle, the four tools, ranking, suggestions, refusals, limits) passes under Node.js 24 and under bun.
+- **The protocol test** `test/mcp_test.js` (323 checks: lifecycle, the four tools, the prompts, the resources, ranking, suggestions, refusals, limits) passes under Node.js 24 and under bun. In it, every reply of every tool over the whole shelf is held against the shape the tool declares.
 - **At the edge, from 2026-11-19**: a copy of the same code at the edge of the network answers every call. The function stays in place: it answers when the edge code steps aside, and when a request asks for it with the header `X-BSV-Edge: off`. Before the switch both were answering on the live address and the same 23 requests were put to each: same status and body in all 23. Times seen that evening from one machine in Tokyo: with a new connection for every call (TLS included), a median of 0.93 s through the function and 0.41 s through the edge code (18 calls each); on one open connection, 0.09 to 0.14 s a call through the edge code (10 calls), and through the function 0.34 to 0.40 s for 9 of 10 calls and 1.93 s for its first search. A measurement on one evening, not a promise.
-- **Item text held at the edge, from 2026-11-20**: `get_item` is answered from the texts the edge code holds. Until then the edge code fetched an item's file from the site at the first read. An item whose text it does not hold is answered by the function. Measured on the live address on 2026-11-20, from one machine in Tokyo on one open connection: `get_item` for 12 different items took 0.09 to 0.14 s each through the edge code; the same 12 items on 2026-11-19, when the edge code still fetched each item's file, 0.41 to 0.76 s each (3 more reads of the last item, by then in its memory: 0.10 to 0.14 s); through the function on 2026-11-20, 0.43 to 0.64 s for 11 of the 12 reads and 1.03 s for the slowest. A measurement, not a promise. `test/edge_diff.mjs` puts the same 1,619 requests to the edge code and to the function and compares the status, the headers and the body of every reply; the one header that may differ is `X-BSV-Via`, which names the place that answered (7,592 checks; each of the 1,067 held texts is read through both and compared with its file), under Node.js 24 and under bun.
+- **Item text held at the edge, from 2026-11-20**: `get_item` is answered from the texts the edge code holds. Until then the edge code fetched an item's file from the site at the first read. An item whose text it does not hold is answered by the function. Measured on the live address on 2026-11-20, from one machine in Tokyo on one open connection: `get_item` for 12 different items took 0.09 to 0.14 s each through the edge code; the same 12 items on 2026-11-19, when the edge code still fetched each item's file, 0.41 to 0.76 s each (3 more reads of the last item, by then in its memory: 0.10 to 0.14 s); through the function on 2026-11-20, 0.43 to 0.64 s for 11 of the 12 reads and 1.03 s for the slowest. A measurement, not a promise. `test/edge_diff.mjs` puts the same 2,719 requests to the edge code and to the function and compares the status, the headers and the body of every reply; the one header that may differ is `X-BSV-Via`, which names the place that answered (13,061 checks; each of the 1,067 held texts is read through both, as a tool call and as a resource, and compared with its file), under Node.js 24 and under bun.
 - **The live address**: plain HTTP requests for `initialize`, `tools/list` and `search_items` on 2026-11-18 and again on 2026-11-19, and the form on the site, which anyone can press.
 - **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
-- **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each. In a second session the same day, against version 1.1.0, it listed the four tools and called `list_filters`, `search_items` and `get_item`: the session shown above.
+- **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each. In a second session the same day, against version 1.1.0, it listed the four tools and called `list_filters`, `search_items` and `get_item`: the session shown above. Before version 1.2.0 was released, the same client was run against that version on our own machine (2026-11-20): it called each of the four tools, listed the three prompts as slash commands and ran one of them (`shelf_overview`), and listed and read the resources, one of them through the template.
 - **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose. Their lines and links were written from each maker's documentation as read on 2026-11-18 and 2026-11-19. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
 
 Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.
