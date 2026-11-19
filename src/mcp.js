@@ -53,7 +53,9 @@ var loader = {
   }
 };
 
-var server = core.create({ origin: ORIGIN, loadIndex: function () { return loader.loadIndex(); }, loadText: function (p) { return loader.loadText(p); } });
+// 1.1.0: /api/mcp is answered at the edge first (netlify/edge-functions/mcp-edge.js, a generated copy of the same core).
+// This function stays as the second place: it answers when the edge function steps aside. "via" tells the two apart in a response header.
+var server = core.create({ origin: ORIGIN, via: "function", loadIndex: function () { return loader.loadIndex(); }, loadText: function (p) { return loader.loadText(p); } });
 
 exports.handler = async function (event) {
   try {

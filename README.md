@@ -77,7 +77,7 @@ Goose takes an install link that GitHub does not show as a link; it is on [the s
 
 ## What a session looks like
 
-Recorded with Claude Code 2.1.308 on macOS, 2026-11-19. The three calls and the answer are taken from the client's own event stream; the prompt is the one given on the command line, and the lines after `->` say what each call returned.
+Recorded with Claude Code 2.1.308 on macOS, 2026-11-19, against server version 1.0.0 (three tools then). The three calls and the answer are taken from the client's own event stream; the prompt is the one given on the command line, and the lines after `->` say what each call returned.
 
 ```text
 prompt   Use the botshelf MCP tools, one call each, in this order: (1) search_items with query 'code
@@ -104,8 +104,9 @@ answer   Total search matches: 61
 | `search_items` | Short cards for items matching every word of `query`. Optional filters: `kind`, `runs_on`, `topic`, `access`, `checked`, `limit`. |
 | `get_item` | One item by `id` (the site path). Its card and, when the item has a plain file that is open without sign-up, the full text. Long text comes in parts (`offset`, `next_offset`). |
 | `list_items` | Items in shelf order, a page at a time, with the same filters. Also the number of items per kind. |
+| `list_filters` | The values the filters accept: the kinds, the where-it-runs names and the topics in use, each with its number of items. |
 
-All three are marked read-only. There are no resources and no prompts.
+All four are marked read-only. There are no resources and no prompts. Search puts whole-word matches first; when no item matches every word, the reply carries `suggestions`, the items that match most of the words.
 
 Of the 1,295 items, 1,293 are open without sign-up and 1,067 of those have a text file that `get_item` returns (the AI teams, the Build Library recipes and the Grok Bot tools).
 The others come back as a card with a link to their page. Counted from the shelf index on 2026-11-19.
@@ -120,7 +121,8 @@ The others come back as a card with a link to their page. Counted from the shelf
 
 ## What has been run
 
-- **The protocol test** in `test/` (103 checks: lifecycle, the three tools, refusals, limits) passes under Node.js 24.
+- **The protocol test** `test/mcp_test.js` (226 checks: lifecycle, the four tools, ranking, suggestions, refusals, limits) passes under Node.js 24 and under bun.
+- **A trial at the edge**: a copy of the same code is deployed at the edge of the network. For now it answers only requests that ask for it (header `X-BSV-Edge: try`); every other call is answered by the function as before. `test/edge_diff.mjs` puts the same 550 requests to that edge code and to the function and finds the same status, headers and body in every reply (2,226 checks), under Node.js 24 and under bun. The edge code had not run on the hosting platform's edge before the release of 1.1.0.
 - **The live address**: plain HTTP requests for `initialize`, `tools/list` and `search_items` on 2026-11-18 and again on 2026-11-19, and the form on the site, which anyone can press.
 - **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
 - **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each.
@@ -134,8 +136,10 @@ Each run is one run on one machine, not a compatibility promise. If a line or a 
 | --- | --- |
 | `server.json` | Entry for the MCP Registry (`com.botshelfvampire/botshelf`). |
 | `.mcp.json`, `.claude-plugin/` | Lets Claude Code (and clients that read the same layout) add the server as a plugin. |
-| `src/` | The function as deployed on the site (Netlify function, Node). Published so the read-only claim can be checked. |
+| `src/mcp.js`, `src/_lib/mcpCore.js` | The function as deployed on the site (Netlify function, Node). Published so the read-only claim can be checked. |
+| `src/edge/mcp-edge.template.js` | The edge function (on trial, see above) without its two inserts. The deployed file is this text with `_lib/mcpCore.js` put in at `/*@@CORE@@*/` and the shelf index put in as one string at `"@@INDEX@@"`. |
 | `test/mcp_test.js` | The protocol test (`node test/mcp_test.js <tree>`; it expects the site's folder layout and replaces `fetch`, so it never touches the network). |
+| `test/edge_diff.mjs` | The comparison of edge code and function (`node test/edge_diff.mjs <tree>`; same layout, no network). |
 
 The server runs on botshelfvampire.com. This repository is not a package to install and has no build step.
 

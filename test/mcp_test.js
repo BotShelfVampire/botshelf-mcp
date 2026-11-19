@@ -1,6 +1,7 @@
-// FIX_3 (2026-11-18): read-only MCP endpoint (/api/mcp). Offline: fetch is replaced by a reader of the
+// Read-only MCP endpoint (/api/mcp), the function. Offline: fetch is replaced by a reader of the
 // tree on disk, so the test never touches the network, a store or real visitor data.
-// Usage (box): node ~/team_test/bsv/work/tests/mcp_test.js <tree root holding netlify/ and site/>
+// Usage: node mcp_test.js <tree root holding netlify/ and site/>
+// 1.1.0 (2026-11-19): list_filters, whole-word ranking, suggestions, serverInfo fields, the "via" header.
 process.env.COMMERCE_SESSION_SECRET = "mcp-test-secret-not-a-real-one";
 const fs = require("fs");
 const path = require("path");
@@ -94,6 +95,19 @@ const tool = async (name, args, o) => {
   x = await call(rpc("a", "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "t", version: "0" } }));
   eq([x.r.statusCode, x.j.id, x.j.result.protocolVersion], [200, "a", "2025-06-18"], "initialize echoes a supported version and the id");
   eq(x.j.result.serverInfo.name, "botshelf-vampire", "server name");
+  const si = x.j.result.serverInfo;
+  eq([si.version, core.SERVER.version], ["1.1.0", "1.1.0"], "server version");
+  ok(si.websiteUrl === "https://botshelfvampire.com/mcp/" && fs.existsSync(path.join(root, "site", "mcp", "index.html")), "serverInfo names the page of the site, and the page exists");
+  ok(Array.isArray(si.icons) && si.icons.length === 1 && si.icons[0].src === "https://botshelfvampire.com/img/mark.jpg" && si.icons[0].mimeType === "image/jpeg"
+    && fs.existsSync(path.join(root, "site", "img", "mark.jpg")), "serverInfo names one icon, and it is a file of the site");
+  ok(typeof si.description === "string" && si.description.length >= 40 && /Read-only/.test(si.description) && !/official/i.test(si.description), "serverInfo has a plain description");
+  ok(/list_filters/.test(x.j.result.instructions), "instructions name the fourth tool");
+  eq(x.r.headers["X-BSV-Via"], "function", "the function says that it answered");
+  ok(/X-BSV-Via/.test(x.r.headers["Access-Control-Expose-Headers"]), "a page on another origin may read which place answered");
+  const quiet = core.create({ origin: "https://botshelfvampire.com", loadIndex: async () => ({ rows: [] }), loadText: async () => "" });
+  ok(!("X-BSV-Via" in (await quiet.handle(ev(rpc(1, "ping")), "k")).headers), "no via given -> no such header");
+  const odd = core.create({ origin: "https://botshelfvampire.com", via: "Edge\r\nX-Evil: 1", loadIndex: async () => ({ rows: [] }), loadText: async () => "" });
+  ok(!("X-BSV-Via" in (await odd.handle(ev(rpc(1, "ping")), "k")).headers), "a via that is not one short lower-case word is not sent");
   eq(Object.keys(x.j.result.capabilities), ["tools"], "only the tools capability is declared");
   ok(/not an\s+official/i.test(x.j.result.instructions) && /Untested/.test(x.j.result.instructions), "instructions say unofficial and Untested");
   x = await call(rpc(2, "initialize", { protocolVersion: "1999-01-01" }));
@@ -116,7 +130,9 @@ const tool = async (name, args, o) => {
   // --- tools/list
   x = await call(rpc(4, "tools/list"));
   const tools = x.j.result.tools;
-  eq(tools.map((t) => t.name), ["search_items", "get_item", "list_items"], "three tools");
+  eq(tools.map((t) => t.name), ["search_items", "get_item", "list_items", "list_filters"], "four tools");
+  ok(tools.every((t) => typeof t.description === "string" && t.description.length > 60 && typeof t.title === "string"), "every tool has a title and a description");
+  ok(tools.every((t) => Object.keys(t.inputSchema.properties).every((k) => typeof t.inputSchema.properties[k].description === "string")), "every argument is described");
   ok(tools.every((t) => t.annotations.readOnlyHint === true && t.annotations.destructiveHint === false), "every tool is marked read-only");
   ok(tools.every((t) => t.inputSchema.type === "object" && t.inputSchema.additionalProperties === false), "schemas are closed objects");
 
@@ -150,6 +166,102 @@ const tool = async (name, args, o) => {
   eq((await call(rpc(9, "tools/call", ["search_items"]))).j.error.code, -32602, "positional params on tools/call -> invalid params");
   t = await tool("search_items", { query: "code ".repeat(12) + "zzzzabsentword" });
   eq(t.data.total, 0, "every word counts, also the thirteenth");
+
+  // --- search: whole words first, the same set as before
+  const fields = (r) => [r.t, r.tj, (r.r || []).join(" "), r.c, r.kl, r.d, r.dj, r.x, r.u].filter(Boolean).map((v) => String(v).toLowerCase());
+  const holds = (r, w) => fields(r).some((f) => f.indexOf(w) >= 0);
+  const atStart = (r, w) => fields(r).some((f) => new RegExp("(^|[^a-z0-9])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(f));
+  const common = ["code", "review", "risk", "ai", "data", "test", "trading", "report", "notes", "team", "email", "search", "plan", "check", "build", "agent"];
+  const pairs = [];
+  for (let i = 0; i < common.length; i++) pairs.push(common[i] + " " + common[(i * 7 + 3) % common.length]);
+  for (const q of ["rsi", "code review", "test", "ai", "meeting notes", "risk ai"].concat(pairs)) {
+    const ws = q.split(" ");
+    t = await tool("search_items", { query: q, limit: 25 });
+    eq(t.data.total, rows.filter((r) => ws.every((w) => holds(r, w))).length, "search \"" + q + "\": the total is every item that holds every word");
+    const whole = t.data.items.map((i) => { const r = rows.find((z) => z.u === i.id); return ws.every((w) => atStart(r, w)); });
+    ok(whole.indexOf(false) < 0 || whole.slice(whole.indexOf(false)).every((v) => v === false), "search \"" + q + "\": no whole-word match comes after a match inside a longer word");
+  }
+  const rank = core.create({ origin: "https://botshelfvampire.com", loadText: async () => "", loadIndex: async () => ({ rows: [
+    { u: "/a/", t: "PersistentAnti", d: "x", a: "open", k: "trade", r: ["MT5"] }, { u: "/b/", t: "Adaptive RSI Moving Average", d: "x", a: "open", k: "trade", r: ["MT5"] },
+    { u: "/c/", t: "Other", d: "uses the rsi of the last bar", a: "open", k: "trade", r: ["MT5"] }, { u: "/d/", t: "会議のメモ", tj: "会議のメモを決定事項に", d: "x", a: "open", k: "team", r: [] }] }) });
+  const rcall = async (args) => JSON.parse((await rank.handle(ev(rpc(1, "tools/call", { name: "search_items", arguments: args })), "k")).body).result.structuredContent;
+  eq((await rcall({ query: "rsi" })).items.map((i) => i.id), ["/b/", "/c/", "/a/"], "a word in the title, then the word in the description, then a match inside a longer word");
+  eq((await rcall({ query: "会議" })).items.map((i) => i.id), ["/d/"], "a Japanese word is found where it stands, without word boundaries");
+  eq((await rcall({ query: "RSI" })).total, 3, "matching ignores case");
+  const rank2 = core.create({ origin: "https://botshelfvampire.com", loadText: async () => "", loadIndex: async () => ({ rows: [
+    { u: "/one/", t: "Risk overlay", d: "makes no claim", a: "open", k: "trade", r: [] }, { u: "/two/", t: "Lab", d: "ai tools for risk work", a: "open", k: "field", r: [] }] }) });
+  eq(JSON.parse((await rank2.handle(ev(rpc(1, "tools/call", { name: "search_items", arguments: { query: "risk ai" } })), "k")).body).result.structuredContent.items.map((i) => i.id), ["/two/", "/one/"],
+    "an item that holds both words as words comes before one that holds a word only inside another, whatever the field");
+  eq((await rcall({ query: "rsi rsi RSI  rsi" })).total, 3, "a word given several times counts once");
+  t = await tool("search_items", { query: "a b c d e f g h i j k l m n o p" });
+  ok(t.res.isError === false, "sixteen different words are taken");
+  t = await tool("search_items", { query: "a b c d e f g h i j k l m n o p q" });
+  ok(t.res.isError === true && /16/.test(t.res.content[0].text), "seventeen different words are refused, with the limit named");
+  let tq = Date.now();
+  t = await tool("search_items", { query: "a ".repeat(98) + "zzzz" });
+  ok(t.res.isError === false && t.data.total === 0 && Date.now() - tq < 60, "a 200-character query of one repeated word is cheap (" + (Date.now() - tq) + " ms)");
+  tq = Date.now();
+  t = await tool("search_items", { query: "ab cd ef gh ij kl mn op qr st uv wx yz ai re zz", limit: 25 });
+  ok(t.res.isError === false && Date.now() - tq < 60, "sixteen different words stay cheap (" + (Date.now() - tq) + " ms)");
+
+  // --- search: nothing holds every word
+  t = await tool("search_items", { query: "code review zzzzabsentword" });
+  ok(t.res.isError === false && t.data.total === 0 && t.data.items.length === 0, "a word nobody holds: still no match");
+  ok(t.data.suggestions && t.data.suggestions.items.length > 0 && t.data.suggestions.items.length <= 5 && /2 of the 3 words/.test(t.data.suggestions.note), "the reply offers the items that hold two of the three words");
+  ok(t.data.suggestions.items.every((i) => JSON.stringify(i.matched_words) === JSON.stringify(["code", "review"]) && holds(rows.find((r) => r.u === i.id), "code") && holds(rows.find((r) => r.u === i.id), "review")), "each suggestion names the words it holds, and holds them");
+  ok(typeof t.data.hint === "string" && /list_filters/.test(t.data.hint), "and a hint names list_filters");
+  eq(JSON.parse(t.res.content[0].text), t.data, "text content and structured content agree for a reply with suggestions");
+  t = await tool("search_items", { query: "zzzzqqqqxxxx-nothing" });
+  ok(t.data.total === 0 && t.data.suggestions === undefined && typeof t.data.hint === "string", "one word nobody holds: a hint, nothing to suggest");
+  t = await tool("search_items", { query: "zzzzqq xxxxqq" });
+  ok(t.data.total === 0 && t.data.suggestions === undefined, "no word held by anything: nothing to suggest");
+  t = await tool("search_items", { query: "code zzzzabsentword", runs_on: "Claude Code", limit: 3 });
+  ok(t.data.suggestions && t.data.suggestions.items.length <= 3 && t.data.suggestions.items.every((i) => i.runs_on.indexOf("Claude Code") >= 0), "suggestions keep to the filters and the limit");
+  t = await tool("search_items", { query: "code review" });
+  ok(t.data.suggestions === undefined && t.data.hint === undefined && t.data.filter_note === undefined, "a search with matches carries no suggestions, hint or note");
+  const paidRow = rows.find((r) => r.a !== "open");
+  t = await tool("search_items", { query: String(paidRow.t).toLowerCase().split(" ")[0] + " zzzzabsentword", access: "paid" });
+  ok(!t.data.suggestions || t.data.suggestions.items.every((i) => i.text_url === null && i.access === "paid"), "a paid listing among the suggestions is a card without a text address");
+
+  // --- a filter value nobody uses
+  t = await tool("search_items", { query: "code", runs_on: "No Such Tool" });
+  ok(t.data.total === 0 && /runs_on/.test(t.data.filter_note) && /list_filters/.test(t.data.filter_note), "unknown runs_on: the reply says which filter matched nothing");
+  t = await tool("list_items", { kind: "nosuchkind", topic: "No Such Topic" });
+  ok(t.data.total === 0 && /kind/.test(t.data.filter_note) && /topic/.test(t.data.filter_note), "unknown kind and topic are both named");
+  t = await tool("list_items", { topic: "Research" });
+  ok(t.data.total > 0 && t.data.filter_note === undefined, "a filter in use carries no note");
+  t = await tool("list_items", { kind: "guide", runs_on: "Claude Code" });
+  ok(t.data.filter_note === undefined, "two values that are both in use but never together: empty list, no note");
+
+  // --- list_filters
+  t = await tool("list_filters", {});
+  const lf = t.data;
+  ok(t.res.isError === false && lf.total === rows.length && lf.kind === null, "list_filters counts the whole shelf");
+  eq(lf.kinds.reduce((n, k) => n + k.items, 0), rows.length, "kind counts add up to the shelf");
+  ok(lf.kinds.every((k, i) => i === 0 || lf.kinds[i - 1].items >= k.items) && lf.runs_on.every((v, i) => i === 0 || lf.runs_on[i - 1].items >= v.items), "most used first");
+  ok(lf.kinds.every((k) => k.items === rows.filter((r) => r.k === k.kind).length && k.types.reduce((n, y) => n + y.items, 0) === rows.filter((r) => r.k === k.kind && r.kl).length), "each kind's count and its type labels are the index's");
+  ok(lf.runs_on.length > 10 && lf.runs_on.every((v) => v.items === rows.filter((r) => (r.r || []).indexOf(v.value) >= 0).length), "each where-it-runs name has its count");
+  ok(lf.topics.length > 10 && lf.topics.every((v) => v.value && v.items === rows.filter((r) => r.c === v.value).length), "each topic has its count; items without a topic are not listed as one");
+  eq([lf.access.open, lf.access.paid, lf.check_recorded], [rows.filter((r) => r.a === "open").length, rows.filter((r) => r.a !== "open").length, rows.filter((r) => r.v === 1).length], "open, paid and checked counts");
+  for (const v of lf.runs_on.slice(0, 4).concat(lf.runs_on.slice(-2))) {
+    eq((await tool("list_items", { runs_on: v.value, limit: 1 })).data.total, v.items, "the runs_on filter takes the listed value as it is: " + v.value);
+  }
+  for (const v of lf.topics.slice(0, 3).concat(lf.topics.slice(-2))) {
+    eq((await tool("list_items", { topic: v.value, limit: 1 })).data.total, v.items, "the topic filter takes the listed value as it is: " + v.value);
+  }
+  for (const k of lf.kinds) eq((await tool("list_items", { kind: k.kind, limit: 1 })).data.total, k.items, "the kind filter takes the listed value as it is: " + k.kind);
+  t = await tool("list_filters", { kind: "build" });
+  ok(t.data.total === rows.filter((r) => r.k === "build").length && t.data.kind === "build" && t.data.kinds.length === lf.kinds.length
+    && t.data.runs_on.every((v) => v.items === rows.filter((r) => r.k === "build" && (r.r || []).indexOf(v.value) >= 0).length), "with a kind: the counts are of that kind, the kinds stay those of the shelf");
+  t = await tool("list_filters", { kind: "nosuchkind" });
+  ok(t.res.isError === true && /team/.test(t.res.content[0].text) && /build/.test(t.res.content[0].text), "unknown kind: a tool error that lists the kinds");
+  t = await tool("list_filters", { query: "x" });
+  ok(t.res.isError === true, "list_filters takes no other argument");
+  for (const odd of ["__proto__", "constructor", "toString", "hasOwnProperty"]) {
+    t = await tool("list_filters", { kind: odd });
+    ok(t.res.isError === true && /The kinds are/.test(t.res.content[0].text), "a name every object inherits is not a kind: " + odd);
+  }
+  ok(JSON.stringify(lf).length < 20000, "the whole list stays small (" + JSON.stringify(lf).length + " characters)");
 
   // --- list
   t = await tool("list_items", {});
@@ -216,6 +328,42 @@ const tool = async (name, args, o) => {
   const broken = core.create({ origin: "https://botshelfvampire.com", loadIndex: async () => { throw new Error("ENOENT /secret/path"); }, loadText: async () => "" });
   const br = await broken.handle(ev(rpc(1, "tools/call", { name: "list_items", arguments: {} })), "k");
   ok(br.statusCode === 200 && JSON.parse(br.body).result.isError === true && !/secret|ENOENT/.test(br.body), "index failure: tool error without internals");
+
+  // --- the body may be handed over as a function, read only when the checks before it have passed
+  let asked = 0;
+  const lazy = core.create({ origin: "https://botshelfvampire.com", loadIndex: async () => ({ rows: [] }), loadText: async () => "" });
+  const lev = (body, headers) => ({ httpMethod: "POST", headers: Object.assign({ "content-type": "application/json" }, headers || {}), body: body });
+  let lr2 = await lazy.handle(lev(async () => { asked++; return JSON.stringify(rpc(1, "ping")); }), "lz");
+  eq([lr2.statusCode, JSON.parse(lr2.body).result, asked], [200, {}, 1], "a body given as a function is read and answered");
+  lr2 = await lazy.handle(lev(async () => { asked++; return "{}"; }, { "content-type": "text/plain" }), "lz");
+  eq([lr2.statusCode, asked], [415, 1], "wrong content type: answered without the body being read");
+  lr2 = await lazy.handle(lev(async () => { asked++; return "{}"; }, { origin: "not-an-origin" }), "lz");
+  eq([lr2.statusCode, asked], [403, 1], "bad Origin: answered without the body being read");
+  for (let i = 0; i < core.LIMITS.perMinute; i++) await lazy.handle(lev(JSON.stringify(rpc(i, "ping"))), "lz-limited");
+  lr2 = await lazy.handle(lev(async () => { asked++; return "{}"; }), "lz-limited");
+  eq([lr2.statusCode, asked], [429, 1], "a caller over the limit is answered without the body being read");
+  lr2 = await lazy.handle(lev(async () => { const e = new Error("slow"); e.tooSlow = true; throw e; }), "lz2");
+  eq(lr2.statusCode, 408, "a body that takes too long -> 408");
+  lr2 = await lazy.handle(lev(async () => { throw new Error("stream broke"); }), "lz2");
+  eq([lr2.statusCode, JSON.parse(lr2.body).error.code], [400, -32700], "a body that cannot be read -> parse error");
+  lr2 = await lazy.handle(lev(async () => ({ text: JSON.stringify(rpc(1, "ping")), bytes: core.LIMITS.bodyBytes + 1 })), "lz3");
+  eq(lr2.statusCode, 413, "a body that says it was over the limit on the wire -> 413, whatever its text");
+  lr2 = await lazy.handle(lev(async () => ({ text: JSON.stringify(rpc(1, "ping", { x: "\ufffd".repeat(11000) })), bytes: 11058 })), "lz3");
+  eq(lr2.statusCode, 200, "a body within the limit on the wire is taken, though its decoded text is longer than the limit in bytes");
+  lr2 = await lazy.handle(lev(async () => ({ text: "{}", bytes: "12" })), "lz3");
+  eq(lr2.statusCode, 400, "a body object without a number of bytes is not taken as a body");
+  let threw = null;
+  try { await lazy.handle(lev(async () => { const e = new Error("x"); e.passOn = true; throw e; }), "lz2"); } catch (e) { threw = e; }
+  ok(threw && threw.passOn === true, "a body error marked to be passed on leaves handle()");
+
+  // --- where a second place stands behind this one, an unreadable file is passed on instead of answered
+  const front = core.create({ origin: "https://botshelfvampire.com", passFailures: true, loadIndex: async () => ({ rows: [{ u: "/g/", t: "G", a: "open", k: "build", raw: "/g/body.md" }] }),
+    loadText: async () => { throw new Error("ECONNRESET"); } });
+  threw = null;
+  try { await front.handle(ev(rpc(1, "tools/call", { name: "get_item", arguments: { id: "/g/" } })), "k"); } catch (e) { threw = e; }
+  ok(threw && threw.passOn === true && !/ECONNRESET/.test(String(threw.message)), "passFailures: the failure leaves handle() marked, without internals");
+  const frontOk = await front.handle(ev(rpc(1, "tools/call", { name: "get_item", arguments: { id: "/nope/" } })), "k");
+  ok(frontOk.statusCode === 200 && JSON.parse(frontOk.body).result.isError === true, "passFailures: a wrong id is still an ordinary tool error");
 
   // --- callers are limited, in memory, per caller
   let clock = 1000;
