@@ -12,6 +12,10 @@
 https://botshelfvampire.com/api/mcp
 ```
 
+<p align="center"><img src="assets/session.svg" alt="記録した Claude Code のやり取り：依頼文、このサーバーへの3回のツール呼び出し（list_filters・search_items・get_item）とそれぞれが返した内容、答え" width="860"></p>
+
+<sub>Claude Code 2.1.308 で 2026-11-19 に記録した、このサーバー（バージョン 1.1.0）とのやり取りです。依頼文、3回のツール呼び出しとそれぞれが返した内容、答えの順に出ます。クライアントが出力したイベントの記録から描いたもので、画面を写したものではありません。[同じ内容をテキストで](#実際のやり取り)。</sub>
+
 **追加する前に、ブラウザで試せます。** **[botshelfvampire.com/mcp/?lang=ja#live](https://botshelfvampire.com/mcp/?lang=ja#live)** のフォームが、ブラウザからこのサーバーへ本物の `tools/call` を送り、
 返事と、やり取りした JSON-RPC、往復にかかった時間を表示します。
 
@@ -80,24 +84,28 @@ Goose の導入リンクは、GitHub ではリンクとして表示されませ�
 
 ## 実際のやり取り
 
-macOS の Claude Code 2.1.308 で、2026-11-19 に記録したものです（サーバーは 1.0.0、ツールが3つだった時点）。3回の呼び出しと答えは、クライアントが出力したイベントの記録から取りました。依頼文は、コマンドラインで渡した文です。`->` の行は、それぞれの呼び出しが返した内容です。
+冒頭の絵は、このやり取りです（macOS の Claude Code 2.1.308、2026-11-19、サーバーはバージョン 1.1.0）。呼び出しと引数、返ってきた内容、答えは、クライアントが出力したイベントの記録から取りました。`⎿` の行はその呼び出しが返した JSON から作った1行、答えはモデルの文です（幅に合わせて折り返し、Markdown の記号は表示していません）。依頼文はコマンドラインで渡した文、版はその晩にサーバーが名乗った版で、この2つはイベントの記録には入っていません。
 
 ```text
-prompt   Use the botshelf MCP tools, one call each, in this order: (1) search_items with query 'code
-         review' and limit 3; (2) get_item with id /library/claude-code/code-review/ and max_chars 600;
-         (3) list_items with limit 1. Then reply in three short lines: the total number of search
-         matches; the first 60 characters of the item's text; the number of items of each kind.
+> Find a code review recipe for Claude Code on the BotShelf Vampire shelf. Use the botshelf tools:
+  list_filters to learn the exact where-it-runs name, then search_items with that filter (limit
+  3), then get_item for the best match (max_chars 600). Answer in three short lines: the item's
+  title and id, what it does, and where it stops.
 
-call 1   search_items {"query":"code review","limit":3}
-         -> 61 matches, 3 cards
-call 2   get_item {"id":"/library/claude-code/code-review/","max_chars":600}
-         -> the first 600 of 1,874 characters of the text
-call 3   list_items {"limit":1}
-         -> 1,295 items; team 119, build 879, grokbot 71, toolkit 18, trade 112, guide 7, field 89
+● botshelf · list_filters {}
+  ⎿ 1,295 items · 7 kinds · 70 where-it-runs names · 82 topics
+● botshelf · search_items {"query":"code review","runs_on":"Claude Code","limit":3}
+  ⎿ 6 matches · Code Review · Diff review · Research-Reviewer Team
+● botshelf · get_item {"id":"/library/claude-code/code-review/","max_chars":600}
+  ⎿ the first 600 of 1,874 characters of “Code Review”
 
-answer   Total search matches: 61
-         First 60 characters of the item text: `You are handling **Code Review** in Claude Code. / GOAL / [GOAL`
-         Items per kind: team 119, build 879, grokbot 71, toolkit 18, trade 112, guide 7, field 89
+- Code Review (id: /library/claude-code/code-review/)
+- What it does: A fill-in Claude Code prompt that asks it to review a change for correctness,
+  maintainability and regression risk. It has you inspect the context, check entry points, tests
+  and call sites, then run tests, lint and type checks.
+- Where it stops: The text has unfilled placeholders ([GOAL], [INPUTS], [CONTEXT_OR_FILES],
+  [CONSTRAINTS]) and I read only the first 600 of 1,874 characters, so I didn't see its full
+  ending. No run is recorded for it.
 ```
 
 ## ツール
@@ -128,7 +136,7 @@ answer   Total search matches: 61
 - **エッジで答えています（2026-11-19 から）**：同じコードの写しが、利用者に近いネットワークの端（エッジ）で、すべての呼び出しに答えます。関数はそのまま残してあります。エッジが身を引いたときと、ヘッダー `X-BSV-Edge: off` で関数を指定したリクエストには、関数が答えます。切り替える前に、公開中のアドレスで両方に同じリクエスト 23 件を送り、23 件ともステータスと本文が同じであることを確かめました。その晩に東京の1台から測った時間：呼び出しのたびに新しく接続した場合（TLS を含む）の中央値は、関数が 0.93 秒、エッジが 0.41 秒（各 18 回）。接続を開いたままの場合は、エッジが1回 0.09〜0.14 秒（10 回）、関数は 10 回のうち 9 回が 0.34〜0.40 秒、最初の検索の1回が 1.93 秒でした。ある晩の測定であって、約束ではありません。`test/edge_diff.mjs` が、同じリクエスト 550 件を両方に送り、どの返事もステータス・ヘッダー・本文が同じであることを確かめます（2,233 項目。Node.js 24 と bun）。
 - **公開中のアドレス**：2026-11-18 と 2026-11-19 に HTTP リクエストを直接送り、`initialize`・`tools/list`・`search_items` を確かめました。サイトのフォームからは、誰でも押して確かめられます。
 - **Codex CLI 0.167.0-alpha.3.2**（macOS、2026-11-18）：アドレスを設定した状態で、ツールの一覧が出ること、`search_items`・`get_item`・`list_items` を1回ずつ呼べることを確かめました。2026-11-19 には追加の1行も実行し、上の `config.toml` の行が書き込まれることを確かめました。
-- **Claude Code 2.1.308**（macOS、2026-11-19）：追加の1行でアドレスが登録され、`claude mcp list` に「接続済み」と出ました。同じアドレスを設定したセッションで、3つのツールが一覧に出ること、1回ずつ呼べることを確かめました。
+- **Claude Code 2.1.308**（macOS、2026-11-19）：追加の1行でアドレスが登録され、`claude mcp list` に「接続済み」と出ました。同じアドレスを設定したセッションで、3つのツールが一覧に出ること、1回ずつ呼べることを確かめました。同じ日の2回目のセッション（バージョン 1.1.0）では、4つのツールが一覧に出て、`list_filters`・`search_items`・`get_item` を呼びました。冒頭の絵は、このセッションです。
 - **動かしていないもの：**Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose。行とリンクは、2026-11-18 と 2026-11-19 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
 
 どの記録も、1台で1回動かしたものです。動作の約束ではありません。行やリンクがうまくいかないときは、issue で知らせてください。
@@ -140,6 +148,14 @@ curl -s -D - -o /dev/null https://botshelfvampire.com/api/mcp -H 'Content-Type: 
 curl -s -D - -o /dev/null https://botshelfvampire.com/api/mcp -H 'Content-Type: application/json' -H 'X-BSV-Edge: off' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' | grep -i '^x-bsv-via'
 ```
 
+## 公開中のサーバーを自分で確かめる
+
+```bash
+git clone https://github.com/BotShelfVampire/botshelf-mcp && node botshelf-mcp/test/live_check.mjs
+```
+
+追加で入れる物はありません。組み込みの `fetch` を使います（Node.js 18 以上、または bun）。こちらでは Node.js 24 と bun で動かしました。このスクリプトは、公開中のアドレスへリクエストを 15 件送ります。14 件は MCP クライアントが送るのと同じ JSON-RPC のメッセージ（接続の手順、ツールの一覧、各ツールの呼び出し、サーバーが断るべきもの）、1件はただの GET です（これも断られるのが正しい動きです）。検索する言葉は、棚そのものから取ります。通信に失敗したリクエストと、429 が返ったリクエストは、1回だけ送り直します。1件ごとに、HTTP ステータス、手元から測った往復の時間、どこが答えたかを表示し、最後に `PASS 22 checks`、または通らなかった項目を出します。
+
 ## このリポジトリ
 
 | パス | 中身 |
@@ -150,6 +166,8 @@ curl -s -D - -o /dev/null https://botshelfvampire.com/api/mcp -H 'Content-Type: 
 | `src/edge/mcp-edge.template.js` | 呼び出しに答えているエッジ用のファイルから、差し込む2か所を抜いたもの。本番のファイルは、この文面の `/*@@CORE@@*/` に `_lib/mcpCore.js` を、`"@@INDEX@@"` に棚の索引（1つの文字列）を入れたものです。 |
 | `test/mcp_test.js` | プロトコルのテスト（`node test/mcp_test.js <tree>`。サイトのフォルダ構成を前提にし、`fetch` を差し替えるので、ネットワークには出ません）。 |
 | `test/edge_diff.mjs` | エッジ用のコードと関数の突き合わせ（`node test/edge_diff.mjs <tree>`。同じ構成で、ネットワークには出ません）。 |
+| `test/live_check.mjs` | 上に書いた、公開中のアドレスの確認。ここにあるテストのうち、ネットワークを使うのはこれだけです。 |
+| `assets/session.svg` | 冒頭の絵。記録したやり取りを、クライアントのイベントの記録から描いたものです。 |
 
 サーバーは botshelfvampire.com で動いています。このリポジトリは、インストールするパッケージではありません。ビルドの手順もありません。
 

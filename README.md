@@ -12,6 +12,10 @@ Read-only. No account, no API key, nothing to install.
 https://botshelfvampire.com/api/mcp
 ```
 
+<p align="center"><img src="assets/session.svg" alt="A recorded Claude Code session: the prompt, three tool calls to this server (list_filters, search_items, get_item) with what each returned, and the answer" width="860"></p>
+
+<sub>A session recorded with Claude Code 2.1.308 on 2026-11-19 against this server (version 1.1.0): the prompt, three tool calls with what each returned, and the answer. Drawn from the client's own event stream, not captured from a screen. [The same lines as text](#what-a-session-looks-like).</sub>
+
 **Try it before you add it.** A form at **[botshelfvampire.com/mcp/#live](https://botshelfvampire.com/mcp/#live)** sends real `tools/call` messages to this server
 from your browser and shows the reply, the JSON-RPC on the wire and the round-trip time.
 
@@ -80,24 +84,28 @@ Goose takes an install link that GitHub does not show as a link; it is on [the s
 
 ## What a session looks like
 
-Recorded with Claude Code 2.1.308 on macOS, 2026-11-19, against server version 1.0.0 (three tools then). The three calls and the answer are taken from the client's own event stream; the prompt is the one given on the command line, and the lines after `->` say what each call returned.
+The picture at the top is this session: Claude Code 2.1.308 on macOS, 2026-11-19, server version 1.1.0. The calls with their arguments, what came back and the answer are taken from the client's own event stream: each `⎿` line is worked out from the JSON that call returned, and the answer is the model's own text (wrapped to the width, its Markdown marks not shown). The prompt is the one given on the command line and the version is the one the server reported that evening; the stream holds neither.
 
 ```text
-prompt   Use the botshelf MCP tools, one call each, in this order: (1) search_items with query 'code
-         review' and limit 3; (2) get_item with id /library/claude-code/code-review/ and max_chars 600;
-         (3) list_items with limit 1. Then reply in three short lines: the total number of search
-         matches; the first 60 characters of the item's text; the number of items of each kind.
+> Find a code review recipe for Claude Code on the BotShelf Vampire shelf. Use the botshelf tools:
+  list_filters to learn the exact where-it-runs name, then search_items with that filter (limit
+  3), then get_item for the best match (max_chars 600). Answer in three short lines: the item's
+  title and id, what it does, and where it stops.
 
-call 1   search_items {"query":"code review","limit":3}
-         -> 61 matches, 3 cards
-call 2   get_item {"id":"/library/claude-code/code-review/","max_chars":600}
-         -> the first 600 of 1,874 characters of the text
-call 3   list_items {"limit":1}
-         -> 1,295 items; team 119, build 879, grokbot 71, toolkit 18, trade 112, guide 7, field 89
+● botshelf · list_filters {}
+  ⎿ 1,295 items · 7 kinds · 70 where-it-runs names · 82 topics
+● botshelf · search_items {"query":"code review","runs_on":"Claude Code","limit":3}
+  ⎿ 6 matches · Code Review · Diff review · Research-Reviewer Team
+● botshelf · get_item {"id":"/library/claude-code/code-review/","max_chars":600}
+  ⎿ the first 600 of 1,874 characters of “Code Review”
 
-answer   Total search matches: 61
-         First 60 characters of the item text: `You are handling **Code Review** in Claude Code. / GOAL / [GOAL`
-         Items per kind: team 119, build 879, grokbot 71, toolkit 18, trade 112, guide 7, field 89
+- Code Review (id: /library/claude-code/code-review/)
+- What it does: A fill-in Claude Code prompt that asks it to review a change for correctness,
+  maintainability and regression risk. It has you inspect the context, check entry points, tests
+  and call sites, then run tests, lint and type checks.
+- Where it stops: The text has unfilled placeholders ([GOAL], [INPUTS], [CONTEXT_OR_FILES],
+  [CONSTRAINTS]) and I read only the first 600 of 1,874 characters, so I didn't see its full
+  ending. No run is recorded for it.
 ```
 
 ## Tools
@@ -128,7 +136,7 @@ The others come back as a card with a link to their page. Counted from the shelf
 - **At the edge, from 2026-11-19**: a copy of the same code at the edge of the network answers every call. The function stays in place: it answers when the edge code steps aside, and when a request asks for it with the header `X-BSV-Edge: off`. Before the switch both were answering on the live address and the same 23 requests were put to each: same status and body in all 23. Times seen that evening from one machine in Tokyo: with a new connection for every call (TLS included), a median of 0.93 s through the function and 0.41 s through the edge code (18 calls each); on one open connection, 0.09 to 0.14 s a call through the edge code (10 calls), and through the function 0.34 to 0.40 s for 9 of 10 calls and 1.93 s for its first search. A measurement on one evening, not a promise. `test/edge_diff.mjs` puts the same 550 requests to both and compares the status, headers and body of every reply (2,233 checks), under Node.js 24 and under bun.
 - **The live address**: plain HTTP requests for `initialize`, `tools/list` and `search_items` on 2026-11-18 and again on 2026-11-19, and the form on the site, which anyone can press.
 - **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
-- **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each.
+- **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each. In a second session the same day, against version 1.1.0, it listed the four tools and called `list_filters`, `search_items` and `get_item`: the session shown above.
 - **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose. Their lines and links were written from each maker's documentation as read on 2026-11-18 and 2026-11-19. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
 
 Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.
@@ -140,6 +148,14 @@ curl -s -D - -o /dev/null https://botshelfvampire.com/api/mcp -H 'Content-Type: 
 curl -s -D - -o /dev/null https://botshelfvampire.com/api/mcp -H 'Content-Type: application/json' -H 'X-BSV-Edge: off' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' | grep -i '^x-bsv-via'
 ```
 
+## Check the live server yourself
+
+```bash
+git clone https://github.com/BotShelfVampire/botshelf-mcp && node botshelf-mcp/test/live_check.mjs
+```
+
+No dependency. It uses the built-in `fetch` (Node.js 18 or newer, or bun) and was run here under Node.js 24 and under bun. The script puts 15 requests to the live address: 14 JSON-RPC messages of the kind an MCP client sends (the handshake, the list of tools, a call of each tool, things the server has to refuse) and one plain GET, which it has to refuse too. The word it searches for is taken from the shelf itself. A request that fails on the network, or is answered with 429, is sent once more. For each request it prints the HTTP status, the time the round trip took from your machine and the place that answered. It ends with `PASS 22 checks`, or with the checks that failed.
+
 ## This repository
 
 | Path | What it is |
@@ -150,6 +166,8 @@ curl -s -D - -o /dev/null https://botshelfvampire.com/api/mcp -H 'Content-Type: 
 | `src/edge/mcp-edge.template.js` | The edge function, which answers the calls, without its two inserts. The deployed file is this text with `_lib/mcpCore.js` put in at `/*@@CORE@@*/` and the shelf index put in as one string at `"@@INDEX@@"`. |
 | `test/mcp_test.js` | The protocol test (`node test/mcp_test.js <tree>`; it expects the site's folder layout and replaces `fetch`, so it never touches the network). |
 | `test/edge_diff.mjs` | The comparison of edge code and function (`node test/edge_diff.mjs <tree>`; same layout, no network). |
+| `test/live_check.mjs` | The check of the live address described above. The only test here that uses the network. |
+| `assets/session.svg` | The picture at the top: the recorded session, drawn from the client's event stream. |
 
 The server runs on botshelfvampire.com. This repository is not a package to install and has no build step.
 
