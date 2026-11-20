@@ -32,6 +32,15 @@ Find a security review prompt on BotShelf Vampire and show me its full text.
 
 <sub>Each was run once in Claude Code 2.1.304 (model claude-haiku-5-5) against the live address on 2026-11-20: the model searched the shelf, read the item with `get_item` and answered. One client, one run each, not a promise for every model.</sub>
 
+<a name="claude-md-line"></a>
+**So that your AI tool looks on the shelf without being asked**, put this line in `CLAUDE.md`. Claude Code reads that file at the start of every session, and `~/.claude/CLAUDE.md` covers all your projects.
+
+```text
+When I ask for a prompt, a skill, an instruction file or an AI team, first search the botshelf MCP server (search_items, then get_item) and show me the best match and its page before you write one from scratch.
+```
+
+<sub>Run on 2026-11-21 with Claude Code 2.1.304 (model claude-haiku-5-5, on Linux): three asks that do not name BotShelf Vampire, one run each (a ChatGPT prompt for meeting notes, a prompt for a security review of a pull request, and the meeting one in Japanese with the line from [README.ja.md](README.ja.md#claude-md-line)). Without the line, the model wrote its own each time and called no tool on this server (0 of 3). With it, the model searched the shelf, read the closest match with `get_item` and showed its page before writing anything (3 of 3). For the runs the four tools were allowed in advance (`--allowedTools`); where they are not, Claude Code may ask you before it calls them. One client, one model, one run per ask: not a promise for every model. The line calls the server `botshelf`, the name the add lines below use. Codex reads `AGENTS.md` before it starts work (`~/.codex/AGENTS.md` for every project), so the same line can go there; not run in Codex. Sources: [Claude Code: How Claude remembers your project](https://code.claude.com/docs/en/memory), [Codex: Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md), read 2026-11-21.</sub>
+
 <p align="center"><img src="assets/session.svg" alt="A recorded Claude Code session: the prompt, three tool calls to this server (list_filters, search_items, get_item) with what each returned, and the answer" width="860"></p>
 
 <sub>A session recorded with Claude Code 2.1.308 on 2026-11-19 against this server (version 1.1.0): the prompt, three tool calls with what each returned, and the answer. Drawn from the client's own event stream, not captured from a screen. [The same lines as text](#what-a-session-looks-like).</sub>
@@ -87,6 +96,8 @@ Claude Code can also take it as a plugin from this repository:
 claude plugin marketplace add BotShelfVampire/botshelf-mcp
 claude plugin install botshelf-mcp@botshelfvampire
 ```
+
+<sub>Run on 2026-11-21 (Claude Code 2.1.304 on Linux, starting from an empty settings folder): both lines succeeded, and `claude mcp list` then showed `plugin:botshelf-mcp:botshelf` as connected. The plugin is installed in user scope (all your projects).</sub>
 
 <details>
 <summary>Config files instead of a command</summary>
@@ -232,6 +243,8 @@ In Claude Code the prompts show up as slash commands: `/mcp__botshelf__find_item
 - **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
 - **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each. In a second session the same day, against version 1.1.0, it listed the four tools and called `list_filters`, `search_items` and `get_item`: the session shown above. Before version 1.2.0 was released, the same client was run against that version on our own machine (2026-11-20): it called each of the four tools, listed the three prompts as slash commands and ran one of them (`shelf_overview`), and listed and read the resources, one of them through the template.
 - **mcp-remote 0.16.7** (the stdio bridge, Node.js 24 on Linux), 2026-11-21: the line `npx -y mcp-remote@0.16.7 https://botshelfvampire.com/api/mcp`, spoken to over stdio, answered `initialize` (1.2.0), `tools/list` (4 tools) and one call each of `search_items` and `get_item`.
+- **Claude Code 2.1.304, the plugin** (Linux, from an empty settings folder), 2026-11-21: `claude plugin marketplace add BotShelfVampire/botshelf-mcp` and `claude plugin install botshelf-mcp@botshelfvampire` succeeded, and `claude mcp list` showed the plugin's server as connected.
+- **Claude Code 2.1.304, the CLAUDE.md line** (model claude-haiku-5-5, Linux), 2026-11-21: three asks that do not name BotShelf Vampire, one run each. Without the line the model used this server in 0 of 3; with it, in 3 of 3 it searched the shelf, read the closest match and showed its page ([the line](#claude-md-line)).
 - **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose, Cline, Zed. Their lines and links were written from each maker's documentation as read on 2026-11-18, 2026-11-19 and 2026-11-21. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
 
 Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.

@@ -32,6 +32,15 @@ BotShelf Vampire でセキュリティレビューのプロンプトを探して
 
 <sub>2026-11-20 に、Claude Code 2.1.304（モデル claude-haiku-5-5）から本番のアドレスに対して流しました。どれも、モデルが棚を検索し、`get_item` で項目を読んで答えました。2つ目は、1回目はモデルがツールを呼ばずに終わり、2回目で動きました。ほかの2つは1回ずつです。1つのクライアントでの記録で、どのモデルでも同じに動くという約束ではありません。</sub>
 
+<a name="claude-md-line"></a>
+**頼まなくても AIツールが棚を見に行くように**、次の1行を `CLAUDE.md` に入れます。Claude Code は会話の始めに毎回このファイルを読みます。`~/.claude/CLAUDE.md` に入れれば、自分の全プロジェクトに効きます。
+
+```text
+プロンプト・スキル・指示ファイル・AIチームを頼んだときは、自分で書く前に、まず botshelf の MCP サーバーで探して（search_items のあと get_item）、いちばん合う物とそのページを見せて。
+```
+
+<sub>2026-11-21 に Claude Code 2.1.304（モデル claude-haiku-5-5、Linux）で、BotShelf Vampire の名前を出さない頼みを3つ、1回ずつ流しました（ChatGPT に貼る会議メモのプロンプト、プルリクエストのセキュリティの見直しのプロンプト、会議メモの頼みの日本語版。日本語版はこの日本語の1行で、ほかの2つは [README.md](README.md#claude-md-line) の英語の1行で）。1行が無いと、3回ともモデルは自分で書き、このサーバーの道具を1度も呼びませんでした（3回中0回）。1行があると、3回とも棚を探し、いちばん近い物を `get_item` で読み、そのページを見せてから書きました（3回中3回）。試験では4つの道具を前もって許可しました（`--allowedTools`）。許可していなければ、呼ぶ前に Claude Code が許可を求めることがあります。クライアント1つ・モデル1つ・頼み1つにつき1回の記録で、どのモデルでも同じになるという約束ではありません。この1行は、サーバーを `botshelf` と呼んでいます（下の追加の行と同じ名前）。Codex は仕事を始める前に `AGENTS.md` を読むので（全プロジェクトなら `~/.codex/AGENTS.md`）、同じ1行をそこに入れられます。Codex では流していません。出どころ：[Claude Code: How Claude remembers your project](https://code.claude.com/docs/en/memory)、[Codex: Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md)（2026-11-21 に読んだもの）。</sub>
+
 <p align="center"><img src="assets/session.svg" alt="記録した Claude Code のやり取り：依頼文、このサーバーへの3回のツール呼び出し（list_filters・search_items・get_item）とそれぞれが返した内容、答え" width="860"></p>
 
 <sub>Claude Code 2.1.308 で 2026-11-19 に記録した、このサーバー（バージョン 1.1.0）とのやり取りです。依頼文、3回のツール呼び出しとそれぞれが返した内容、答えの順に出ます。クライアントが出力したイベントの記録から描いたもので、画面を写したものではありません。[同じ内容をテキストで](#実際のやり取り)。</sub>
@@ -87,6 +96,8 @@ Claude Code では、このリポジトリからプラグインとして入れ�
 claude plugin marketplace add BotShelfVampire/botshelf-mcp
 claude plugin install botshelf-mcp@botshelfvampire
 ```
+
+<sub>2026-11-21 に実行（Linux の Claude Code 2.1.304、空の設定フォルダから）：2行とも成功し、そのあと `claude mcp list` で `plugin:botshelf-mcp:botshelf` がつながっていると出ました。プラグインは user scope（自分の全プロジェクト）に入ります。</sub>
 
 <details>
 <summary>コマンドの代わりに、設定ファイルで書く</summary>
@@ -232,7 +243,9 @@ Claude Code では、プロンプトはスラッシュコマンドとして出�
 - **Codex CLI 0.167.0-alpha.3.2**（macOS、2026-11-18）：アドレスを設定した状態で、ツールの一覧が出ること、`search_items`・`get_item`・`list_items` を1回ずつ呼べることを確かめました。2026-11-19 には追加の1行も実行し、上の `config.toml` の行が書き込まれることを確かめました。
 - **Claude Code 2.1.308**（macOS、2026-11-19）：追加の1行でアドレスが登録され、`claude mcp list` に「接続済み」と出ました。同じアドレスを設定したセッションで、3つのツールが一覧に出ること、1回ずつ呼べることを確かめました。同じ日の2回目のセッション（バージョン 1.1.0）では、4つのツールが一覧に出て、`list_filters`・`search_items`・`get_item` を呼びました。冒頭の絵は、このセッションです。バージョン 1.2.0 を公開する前には、こちらの手元でその版を動かし、同じクライアントで確かめました（2026-11-20）：4つのツールを1回ずつ呼べること、3つのプロンプトがスラッシュコマンドとして並び、そのうちの1つ（`shelf_overview`）を実行できること、リソースの一覧と読み出し（1つはひな型経由）ができること。
 - **mcp-remote 0.16.7**（stdio の橋渡し、Linux・Node.js 24）、2026-11-21：`npx -y mcp-remote@0.16.7 https://botshelfvampire.com/api/mcp` の行に stdio で話しかけ、`initialize`（1.2.0）、`tools/list`（ツール4つ）、`search_items` と `get_item` の1回ずつに答えが返りました。
-- **動かしていないもの：**Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose・Cline・Zed。行とリンクは、2026-11-18・2026-11-19・2026-11-21 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
+- **Claude Code 2.1.304 のプラグイン**（Linux、空の設定フォルダから）、2026-11-21：`claude plugin marketplace add BotShelfVampire/botshelf-mcp` と `claude plugin install botshelf-mcp@botshelfvampire` が成功し、`claude mcp list` でプラグインのサーバーがつながっていると出ました。
+- **Claude Code 2.1.304 と CLAUDE.md の1行**（モデル claude-haiku-5-5、Linux）、2026-11-21：BotShelf Vampire の名前を出さない頼みを3つ、1回ずつ。1行が無いと、このサーバーを使ったのは3回中0回。1行があると3回中3回、棚を探し、いちばん近い物を読んでページを見せました（[その1行](#claude-md-line)）。
+- **動かしていないもの**：Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose・Cline・Zed。行とリンクは、2026-11-18・2026-11-19・2026-11-21 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
 
 どの記録も、1台で1回動かしたものです。動作の約束ではありません。行やリンクがうまくいかないときは、issue で知らせてください。
 
