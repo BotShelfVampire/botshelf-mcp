@@ -38,6 +38,21 @@ Find a security review prompt on BotShelf Vampire and show me its full text.
 **Try it before you add it.** A form at **[botshelfvampire.com/mcp/#live](https://botshelfvampire.com/mcp/#live)** sends real `tools/call` messages to this server
 from your browser and shows the reply, the JSON-RPC on the wire and the round-trip time.
 
+<!-- w12-data -->
+**All the MIT texts in one file.** The 997 texts on the shelf that BotShelf Vampire wrote and marks MIT (809 Build Library prompts, instructions and skills,
+117 free AI teams and 71 Grok Bot tools) are also one JSON Lines file, 2.7 MB, one item per line with the same id, card fields and text that `get_item` returns.
+For training data, evals or a local index. Fields, what is left out and the license: [botshelfvampire.com/data/](https://botshelfvampire.com/data/)
+
+```bash
+curl -O https://botshelfvampire.com/data/mit-texts.v20261120.jsonl
+```
+
+```python
+import pandas as pd
+df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", lines=True)  # 997 rows, 15 columns
+```
+<!-- /w12-data -->
+
 **Answered at the edge of the network.** A copy of the same code, close to the caller, answers every call: 0.09 to 0.14 s a call on an open connection,
 seen from Tokyo on 2026-11-19 (10 calls of `ping` and `search_items`). The edge code holds the text of the 1,067 items that have an open text file, beside the shelf index, and requests nothing while it answers:
 reading an item's text took 0.09 to 0.14 s there on 2026-11-20 (12 different items, same conditions).

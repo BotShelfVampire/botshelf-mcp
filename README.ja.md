@@ -38,6 +38,21 @@ BotShelf Vampire でセキュリティレビューのプロンプトを探して
 **追加する前に、ブラウザで試せます。** **[botshelfvampire.com/mcp/?lang=ja#live](https://botshelfvampire.com/mcp/?lang=ja#live)** のフォームが、ブラウザからこのサーバーへ本物の `tools/call` を送り、
 返事と、やり取りした JSON-RPC、往復にかかった時間を表示します。
 
+<!-- w12-data -->
+**MIT の文面を、全部1つのファイルで。** 棚にある、BotShelf Vampire が書いた MIT の文面 997 件（Build Library のプロンプト・指示・スキル 809 件、
+無料のAIチーム 117 件、Grok Bot の道具 71 件）を、1つの JSON Lines ファイル（2.7 MB）にもしてあります。1行に1件で、id・カードの項目・本文は `get_item` が返すものと同じです。
+学習データ・評価・手元の索引に。項目の説明、入れていないもの、ライセンス：[botshelfvampire.com/data/](https://botshelfvampire.com/data/?lang=ja)
+
+```bash
+curl -O https://botshelfvampire.com/data/mit-texts.v20261120.jsonl
+```
+
+```python
+import pandas as pd
+df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", lines=True)  # 997 行・15 列
+```
+<!-- /w12-data -->
+
 **利用者に近いネットワークの端（エッジ）で答えます。** 同じコードの写しが、すべての呼び出しに答えます。東京から測った値（2026-11-19）は、接続を開いたままの呼び出しで1回 0.09〜0.14 秒（`ping` と `search_items` を合わせて 10 回）。
 エッジのコードは、棚の索引と並べて、登録なしで開けるテキストファイルがある 1,067 件の本文を持っていて、答えるあいだ、どこにもリクエストを送りません。
 本文を読む呼び出しは、同じ条件で1回 0.09〜0.14 秒でした（2026-11-20、違う項目 12 件）。
