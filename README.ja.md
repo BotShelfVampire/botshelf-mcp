@@ -1,11 +1,12 @@
-# BotShelf Vampire MCP サーバー
+# BotShelf Vampire MCP サーバー：無料のプロンプト・スキル・AIチーム
 
 [![mcptry: live status and score](https://mcptry.com/badge/com.botshelfvampire/botshelf)](https://mcptry.com/servers/com.botshelfvampire/botshelf)
 [![MCP Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.modelcontextprotocol.io%2Fv0.1%2Fservers%2Fcom.botshelfvampire%252Fbotshelf%2Fversions%2Flatest&query=%24.server.version&label=MCP%20Registry)](https://registry.modelcontextprotocol.io/v0/servers?search=com.botshelfvampire)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**アドレスを1つ登録すると、AIツールから、棚にある 1,295 件の項目を検索し、そのうち 1,067 件の全文を読めます。** 中身は [botshelfvampire.com](https://botshelfvampire.com/) の、
-無料のAIチーム、Build Library のレシピ、エージェント用ツールキット、非公式の Grok Bot の道具、トレードの道具とガイドです。
+**アドレスを1つ登録すると、AIツールから 1,295 件を検索し、無料の 1,067 件の全文を読めます。** 中身は [botshelfvampire.com](https://botshelfvampire.com/) の、
+Build Library のプロンプト・指示・スキル・ワークフロー 879 件（Claude Code・Cursor・Gemini・DeepSeek・Dify・AutoGen など向け）、AIチーム 117 件、非公式の Grok Bot の道具 71 件です。
+検索では、棚にあるトレードの道具・エージェント用ツールキット・ガイドも、カードとリンクで出ます。
 読み取り専用。アカウントもAPIキーも要らず、インストールする物もありません。
 ツール 4 つ、プロンプト 3 つ、リソース 2 つと、項目を1つ読むひな型。どのツールも、返す内容の形を名乗ります。
 
@@ -13,7 +14,7 @@
 https://botshelfvampire.com/api/mcp
 ```
 
-**無料。アカウントもAPIキーも要りません。** 追加先：[Claude アプリ](#claude-app) · [Claude Code](#1行で追加する) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [ほかのツール](#1行で追加する)
+**無料。アカウントもAPIキーも要りません。** 追加先：[Claude アプリ](#claude-app) · [Claude Code](#1行で追加する) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [Cline](#1行で追加する) · [Zed](#cline-zed-stdio) · [stdio だけのクライアント](#cline-zed-stdio) · [ほかのツール](#1行で追加する)
 
 **追加したら、たとえばこう頼みます：**
 
@@ -71,6 +72,7 @@ df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", 
 | Codex | `codex mcp add botshelf --url https://botshelfvampire.com/api/mcp` |
 | Gemini CLI | `gemini mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
 | Grok Build | `grok mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
+| Cline | `cline mcp add botshelf https://botshelfvampire.com/api/mcp --transport http --yes` |
 
 導入リンクから追加することもできます。アプリが開き、このサーバーが入力された状態になります：
 
@@ -117,6 +119,29 @@ url = "https://botshelfvampire.com/api/mcp"
 Goose の導入リンクは、GitHub ではリンクとして表示されません。[サイトのページ](https://botshelfvampire.com/mcp/?lang=ja#add)にあります。
 
 </details>
+
+<a name="cline-zed-stdio"></a>
+### Cline・Zed・stdio だけのクライアント
+
+Cline の拡張機能（MCP の設定 JSON）。`"type": "streamableHttp"` は消さないでください。Cline のドキュメントによると、これが無いと Cline は古い SSE の方式で接続しますが、このサーバーは SSE を出していません。
+
+```json
+{ "mcpServers": { "botshelf": { "type": "streamableHttp", "url": "https://botshelfvampire.com/api/mcp" } } }
+```
+
+Zed（`settings.json`。または Settings → AI → MCP Servers → Add Server → Add Remote Server）。このサーバーにはサインインが無いので、ヘッダーは要りません。
+
+```json
+{ "context_servers": { "botshelf": { "url": "https://botshelfvampire.com/api/mcp" } } }
+```
+
+設定にコマンドとその引数しか書けないクライアントは、[mcp-remote](https://github.com/punkpeye/mcp-remote)（BSV ではない作者の npm パッケージ）を使えます。あなたのパソコンの Node.js で動き、やり取りを上のアドレスへ取り次ぎます：
+
+```json
+{ "mcpServers": { "botshelf": { "command": "npx", "args": ["-y", "mcp-remote@0.16.7", "https://botshelfvampire.com/api/mcp"] } } }
+```
+
+<sub>Cline と Zed の書き方は、2026-11-21 に読んだ各ドキュメントのとおりです（[Cline](https://docs.cline.bot/mcp/mcp-overview)・[Zed](https://zed.dev/docs/ai/mcp)）。どちらのクライアントも、ここでは動かしていません。mcp-remote の行は 2026-11-21 に実行しました（Linux・Node.js 24）。stdio で話しかけ、`initialize`（1.2.0）、`tools/list`（ツール4つ）、`search_items` と `get_item` の1回ずつに答えが返りました。バージョンは、実行した物に固定してあります。</sub>
 
 <a name="claude-app"></a>
 ## Claude アプリ（claude.ai・Claude Desktop）
@@ -206,7 +231,8 @@ Claude Code では、プロンプトはスラッシュコマンドとして出�
 - **公開中のアドレス**：2026-11-18 と 2026-11-19 に HTTP リクエストを直接送り、`initialize`・`tools/list`・`search_items` を確かめました。サイトのフォームからは、誰でも押して確かめられます。
 - **Codex CLI 0.167.0-alpha.3.2**（macOS、2026-11-18）：アドレスを設定した状態で、ツールの一覧が出ること、`search_items`・`get_item`・`list_items` を1回ずつ呼べることを確かめました。2026-11-19 には追加の1行も実行し、上の `config.toml` の行が書き込まれることを確かめました。
 - **Claude Code 2.1.308**（macOS、2026-11-19）：追加の1行でアドレスが登録され、`claude mcp list` に「接続済み」と出ました。同じアドレスを設定したセッションで、3つのツールが一覧に出ること、1回ずつ呼べることを確かめました。同じ日の2回目のセッション（バージョン 1.1.0）では、4つのツールが一覧に出て、`list_filters`・`search_items`・`get_item` を呼びました。冒頭の絵は、このセッションです。バージョン 1.2.0 を公開する前には、こちらの手元でその版を動かし、同じクライアントで確かめました（2026-11-20）：4つのツールを1回ずつ呼べること、3つのプロンプトがスラッシュコマンドとして並び、そのうちの1つ（`shelf_overview`）を実行できること、リソースの一覧と読み出し（1つはひな型経由）ができること。
-- **動かしていないもの：**Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose。行とリンクは、2026-11-18 と 2026-11-19 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
+- **mcp-remote 0.16.7**（stdio の橋渡し、Linux・Node.js 24）、2026-11-21：`npx -y mcp-remote@0.16.7 https://botshelfvampire.com/api/mcp` の行に stdio で話しかけ、`initialize`（1.2.0）、`tools/list`（ツール4つ）、`search_items` と `get_item` の1回ずつに答えが返りました。
+- **動かしていないもの：**Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose・Cline・Zed。行とリンクは、2026-11-18・2026-11-19・2026-11-21 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
 
 どの記録も、1台で1回動かしたものです。動作の約束ではありません。行やリンクがうまくいかないときは、issue で知らせてください。
 

@@ -1,11 +1,12 @@
-# BotShelf Vampire MCP server
+# BotShelf Vampire MCP server: free prompts, skills and AI teams
 
 [![mcptry: live status and score](https://mcptry.com/badge/com.botshelfvampire/botshelf)](https://mcptry.com/servers/com.botshelfvampire/botshelf)
 [![MCP Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.modelcontextprotocol.io%2Fv0.1%2Fservers%2Fcom.botshelfvampire%252Fbotshelf%2Fversions%2Flatest&query=%24.server.version&label=MCP%20Registry)](https://registry.modelcontextprotocol.io/v0/servers?search=com.botshelfvampire)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**One address lets your AI tool search a shelf of 1,295 items and read the full text of 1,067 of them**: free AI teams, Build Library recipes,
-agent toolkits, unofficial Grok Bot tools, trading tools and guides from [botshelfvampire.com](https://botshelfvampire.com/).
+**One address lets your AI tool search 1,295 items and read the full text of 1,067 free ones**: 879 prompts, instructions, skills and workflows from the Build Library
+(for Claude Code, Cursor, Gemini, DeepSeek, Dify, AutoGen and others), 117 AI teams and 71 unofficial Grok Bot tools from [botshelfvampire.com](https://botshelfvampire.com/).
+Search also finds the shelf's trading tools, agent toolkits and guides, as cards with links.
 Read-only. No account, no API key, nothing to install.
 4 tools, 3 prompts, 2 resources and a template that reads one item; every tool declares the shape of its replies.
 
@@ -13,7 +14,7 @@ Read-only. No account, no API key, nothing to install.
 https://botshelfvampire.com/api/mcp
 ```
 
-**Free. No account, no API key.** Add it to: [Claude app](#claude-app) · [Claude Code](#add-it-in-one-line) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [other tools](#add-it-in-one-line)
+**Free. No account, no API key.** Add it to: [Claude app](#claude-app) · [Claude Code](#add-it-in-one-line) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [Cline](#add-it-in-one-line) · [Zed](#cline-zed-stdio) · [stdio clients](#cline-zed-stdio) · [other tools](#add-it-in-one-line)
 
 **Then ask your AI tool, for example:**
 
@@ -71,6 +72,7 @@ Every reply names the place that answered in its `X-BSV-Via` header. The whole m
 | Codex | `codex mcp add botshelf --url https://botshelfvampire.com/api/mcp` |
 | Gemini CLI | `gemini mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
 | Grok Build | `grok mcp add --transport http botshelf https://botshelfvampire.com/api/mcp` |
+| Cline | `cline mcp add botshelf https://botshelfvampire.com/api/mcp --transport http --yes` |
 
 Or use an install link. It opens the app with this server filled in:
 
@@ -117,6 +119,29 @@ url = "https://botshelfvampire.com/api/mcp"
 Goose takes an install link that GitHub does not show as a link; it is on [the site's page](https://botshelfvampire.com/mcp/#add).
 
 </details>
+
+<a name="cline-zed-stdio"></a>
+### Cline, Zed and clients that only speak stdio
+
+Cline extension (the MCP settings JSON). Keep `"type": "streamableHttp"`: Cline's documentation says that without it Cline uses the older SSE transport, which this server does not offer.
+
+```json
+{ "mcpServers": { "botshelf": { "type": "streamableHttp", "url": "https://botshelfvampire.com/api/mcp" } } }
+```
+
+Zed (`settings.json`, or Settings > AI > MCP Servers > Add Server > Add Remote Server). No headers are needed: this server has no sign-in.
+
+```json
+{ "context_servers": { "botshelf": { "url": "https://botshelfvampire.com/api/mcp" } } }
+```
+
+A client whose settings take only a command and its arguments can use [mcp-remote](https://github.com/punkpeye/mcp-remote), an npm package from another maker (not BSV). It runs on your computer with Node.js and passes the messages to the address above:
+
+```json
+{ "mcpServers": { "botshelf": { "command": "npx", "args": ["-y", "mcp-remote@0.16.7", "https://botshelfvampire.com/api/mcp"] } } }
+```
+
+<sub>The Cline and Zed forms follow their documentation as read on 2026-11-21 ([Cline](https://docs.cline.bot/mcp/mcp-overview), [Zed](https://zed.dev/docs/ai/mcp)); neither client has been run here. The mcp-remote line was run on 2026-11-21 (Node.js 24 on Linux): spoken to over stdio, it answered `initialize` (1.2.0), `tools/list` (4 tools) and one call each of `search_items` and `get_item`. The version is pinned to the one that was run.</sub>
 
 <a name="claude-app"></a>
 ## Claude app (claude.ai and Claude Desktop)
@@ -206,7 +231,8 @@ In Claude Code the prompts show up as slash commands: `/mcp__botshelf__find_item
 - **The live address**: plain HTTP requests for `initialize`, `tools/list` and `search_items` on 2026-11-18 and again on 2026-11-19, and the form on the site, which anyone can press.
 - **Codex CLI 0.167.0-alpha.3.2** on macOS, 2026-11-18: with the address in its settings it listed the tools and completed one call each of `search_items`, `get_item` and `list_items`. On 2026-11-19 its add line was run and wrote the `config.toml` lines shown above.
 - **Claude Code 2.1.308** on macOS, 2026-11-19: its add line registered the address, `claude mcp list` showed the server as connected, and in a session with the same address the client listed the three tools and completed one call each. In a second session the same day, against version 1.1.0, it listed the four tools and called `list_filters`, `search_items` and `get_item`: the session shown above. Before version 1.2.0 was released, the same client was run against that version on our own machine (2026-11-20): it called each of the four tools, listed the three prompts as slash commands and ran one of them (`shelf_overview`), and listed and read the resources, one of them through the template.
-- **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose. Their lines and links were written from each maker's documentation as read on 2026-11-18 and 2026-11-19. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
+- **mcp-remote 0.16.7** (the stdio bridge, Node.js 24 on Linux), 2026-11-21: the line `npx -y mcp-remote@0.16.7 https://botshelfvampire.com/api/mcp`, spoken to over stdio, answered `initialize` (1.2.0), `tools/list` (4 tools) and one call each of `search_items` and `get_item`.
+- **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose, Cline, Zed. Their lines and links were written from each maker's documentation as read on 2026-11-18, 2026-11-19 and 2026-11-21. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
 
 Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.
 
