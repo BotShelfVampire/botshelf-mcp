@@ -32,6 +32,9 @@ Find a security review prompt on BotShelf Vampire and show me its full text.
 
 <sub>Each was run once in Claude Code 2.1.304 (model claude-haiku-5-5) against the live address on 2026-11-20: the model searched the shelf, read the item with `get_item` and answered. One client, one run each, not a promise for every model.</sub>
 
+<a name="japanese-words"></a>
+**Japanese words work too.** Since 2026-11-21 the search also finds items by Japanese words for their title, topic and type, such as コードレビュー, セキュリティ, 議事録, テスト or 営業. The words come from a fixed table of English and Japanese word pairs and were added to each item's search keywords. Of 48 Japanese searches we tried, 43 find items now (26 before). The 4,623 English searches we compared give the same replies as before. Most item texts are in English.
+
 <a name="claude-md-line"></a>
 **So that your AI tool looks on the shelf without being asked**, put this line in `CLAUDE.md`. Claude Code reads that file at the start of every session, and `~/.claude/CLAUDE.md` covers all your projects.
 
@@ -245,6 +248,7 @@ In Claude Code the prompts show up as slash commands: `/mcp__botshelf__find_item
 - **mcp-remote 0.16.7** (the stdio bridge, Node.js 24 on Linux), 2026-11-21: the line `npx -y mcp-remote@0.16.7 https://botshelfvampire.com/api/mcp`, spoken to over stdio, answered `initialize` (1.2.0), `tools/list` (4 tools) and one call each of `search_items` and `get_item`.
 - **Claude Code 2.1.304, the plugin** (Linux, from an empty settings folder), 2026-11-21: `claude plugin marketplace add BotShelfVampire/botshelf-mcp` and `claude plugin install botshelf-mcp@botshelfvampire` succeeded, and `claude mcp list` showed the plugin's server as connected.
 - **Claude Code 2.1.304, the CLAUDE.md line** (model claude-haiku-5-5, Linux), 2026-11-21: three asks that do not name BotShelf Vampire, one run each. Without the line the model used this server in 0 of 3; with it, in 3 of 3 it searched the shelf, read the closest match and showed its page ([the line](#claude-md-line)).
+- **Japanese search words**, 2026-11-21: the shelf index got Japanese words for each item's English title, topic and type (a fixed table of 122 word pairs; 1,243 of the 1,295 items). Run through this server's code on our own machine: 43 of 48 Japanese searches found items (26 with the old index), and 4,623 English searches gave the same replies as with the old index ([Japanese words](#japanese-words)).
 - **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose, Cline, Zed. Their lines and links were written from each maker's documentation as read on 2026-11-18, 2026-11-19 and 2026-11-21. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
 
 Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.
