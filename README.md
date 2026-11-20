@@ -13,6 +13,24 @@ Read-only. No account, no API key, nothing to install.
 https://botshelfvampire.com/api/mcp
 ```
 
+**Free. No account, no API key.** Add it to: [Claude app](#claude-app) · [Claude Code](#add-it-in-one-line) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [other tools](#add-it-in-one-line)
+
+**Then ask your AI tool, for example:**
+
+```text
+Find a prompt on the BotShelf Vampire shelf that turns meeting notes into action items, and show me its full text.
+```
+
+```text
+Is there a free code review prompt for Claude Code on BotShelf Vampire? Read it and tell me in three lines what it asks for.
+```
+
+```text
+Find a security review prompt on BotShelf Vampire and show me its full text.
+```
+
+<sub>Each was run once in Claude Code 2.1.304 (model claude-haiku-5-5) against the live address on 2026-11-20: the model searched the shelf, read the item with `get_item` and answered. One client, one run each, not a promise for every model.</sub>
+
 <p align="center"><img src="assets/session.svg" alt="A recorded Claude Code session: the prompt, three tool calls to this server (list_filters, search_items, get_item) with what each returned, and the answer" width="860"></p>
 
 <sub>A session recorded with Claude Code 2.1.308 on 2026-11-19 against this server (version 1.1.0): the prompt, three tool calls with what each returned, and the answer. Drawn from the client's own event stream, not captured from a screen. [The same lines as text](#what-a-session-looks-like).</sub>
@@ -84,6 +102,20 @@ url = "https://botshelfvampire.com/api/mcp"
 Goose takes an install link that GitHub does not show as a link; it is on [the site's page](https://botshelfvampire.com/mcp/#add).
 
 </details>
+
+<a name="claude-app"></a>
+## Claude app (claude.ai and Claude Desktop)
+
+In the Claude app this server is added as a custom connector:
+
+1. Open **Customize > Connectors**, press **+ Add**, then **Add custom connector**.
+2. Enter a name (for example BotShelf Vampire) and `https://botshelfvampire.com/api/mcp`, then press **Continue**.
+3. Look over the authentication settings Claude detected and press **Continue**. Under **Authentication** choose **No sign in**, then press **Add**.
+4. In a chat, turn it on from **+** > **Connectors**.
+
+Claude's help center says custom connectors work on the Free, Pro, Max, Ultra, Team and Enterprise plans, with one custom connector on Free.
+On Team and Enterprise, an Owner adds it under Organization settings > Connectors. We have not run these steps inside the Claude app.
+Source: [Get started with custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp), read 2026-11-20.
 
 ## What a session looks like
 

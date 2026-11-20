@@ -13,6 +13,24 @@
 https://botshelfvampire.com/api/mcp
 ```
 
+**無料。アカウントもAPIキーも要りません。** 追加先：[Claude アプリ](#claude-app) · [Claude Code](#1行で追加する) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [ほかのツール](#1行で追加する)
+
+**追加したら、たとえばこう頼みます：**
+
+```text
+BotShelf Vampire の棚から、会議メモを行動リストにするプロンプトを探して、全文を見せて。
+```
+
+```text
+BotShelf Vampire で Claude Code 用のコードレビューのプロンプトを探して、何を頼む内容か3行で教えて。
+```
+
+```text
+BotShelf Vampire でセキュリティレビューのプロンプトを探して、全文を見せて。
+```
+
+<sub>2026-11-20 に、Claude Code 2.1.304（モデル claude-haiku-5-5）から本番のアドレスに対して流しました。どれも、モデルが棚を検索し、`get_item` で項目を読んで答えました。2つ目は、1回目はモデルがツールを呼ばずに終わり、2回目で動きました。ほかの2つは1回ずつです。1つのクライアントでの記録で、どのモデルでも同じに動くという約束ではありません。</sub>
+
 <p align="center"><img src="assets/session.svg" alt="記録した Claude Code のやり取り：依頼文、このサーバーへの3回のツール呼び出し（list_filters・search_items・get_item）とそれぞれが返した内容、答え" width="860"></p>
 
 <sub>Claude Code 2.1.308 で 2026-11-19 に記録した、このサーバー（バージョン 1.1.0）とのやり取りです。依頼文、3回のツール呼び出しとそれぞれが返した内容、答えの順に出ます。クライアントが出力したイベントの記録から描いたもので、画面を写したものではありません。[同じ内容をテキストで](#実際のやり取り)。</sub>
@@ -84,6 +102,20 @@ url = "https://botshelfvampire.com/api/mcp"
 Goose の導入リンクは、GitHub ではリンクとして表示されません。[サイトのページ](https://botshelfvampire.com/mcp/?lang=ja#add)にあります。
 
 </details>
+
+<a name="claude-app"></a>
+## Claude アプリ（claude.ai・Claude Desktop）
+
+Claude アプリでは、このサーバーを「カスタムコネクタ」として追加します：
+
+1. **Customize > Connectors** を開き、**+ Add** → **Add custom connector** を押します。
+2. 名前（例：BotShelf Vampire）と `https://botshelfvampire.com/api/mcp` を入れて、**Continue** を押します。
+3. Claude が読み取った認証の設定を確かめて、**Continue** を押します。**Authentication** で **No sign in** を選び、**Add** を押します。
+4. チャットでは **+** → **Connectors** から有効にします。
+
+Claude のヘルプセンターによると、カスタムコネクタは Free・Pro・Max・Ultra・Team・Enterprise の各プランで使え、Free では1つまでです。
+Team と Enterprise では、Owner が Organization settings > Connectors から追加します。この手順を Claude アプリの中でこちらが実行したことはありません。
+出どころ：[Get started with custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp)（2026-11-20 に読んだもの）。
 
 ## 実際のやり取り
 
