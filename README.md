@@ -61,6 +61,7 @@ curl -O https://botshelfvampire.com/data/mit-texts.v20261120.jsonl
 import pandas as pd
 df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", lines=True)  # 997 rows, 15 columns
 ```
+280 of the 997 rows are the same text as another row except for the item's own name (17 groups, the largest 127 skills). [The groups](https://botshelfvampire.com/data/mit-texts.v20261120.same-text.json) let you keep one row per text: 734 remain ([the line for it](https://botshelfvampire.com/data/#load)).
 <!-- /w12-data -->
 
 **Answered at the edge of the network.** A copy of the same code, close to the caller, answers every call: 0.09 to 0.14 s a call on an open connection,
@@ -185,7 +186,7 @@ Sources: [Connecting custom MCP servers in ChatGPT](https://help.openai.com/en/a
 
 ## What a session looks like
 
-The picture at the top is this session: Claude Code 2.1.308 on macOS, 2026-11-19, server version 1.1.0. The calls with their arguments, what came back and the answer are taken from the client's own event stream: each `⎿` line is worked out from the JSON that call returned, and the answer is the model's own text (wrapped to the width, its Markdown marks not shown). The prompt is the one given on the command line and the version is the one the server reported that evening; the stream holds neither.
+The picture at the top is this session: Claude Code 2.1.308 on macOS, 2026-11-19, server version 1.1.0. The calls with their arguments, what came back and the answer are taken from the client's own event stream: each `⎿` line is worked out from the JSON that call returned, and the answer is the model's own text (wrapped to the width, its Markdown marks not shown). The prompt is the one given on the command line and the version is the one the server reported that evening; the stream holds neither. On 2026-11-21 the same three calls, sent to the live address (version 1.2.0), returned the same numbers.
 
 ```text
 > Find a code review recipe for Claude Code on the BotShelf Vampire shelf. Use the botshelf tools:
