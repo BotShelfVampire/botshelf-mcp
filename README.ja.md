@@ -56,7 +56,7 @@ BotShelf Vampire でセキュリティレビューのプロンプトを探して
 
 <!-- w12-data -->
 **MIT の文面を、全部1つのファイルで。** 棚にある、BotShelf Vampire が書いた MIT の文面 997 件（Build Library のプロンプト・指示・スキル 809 件、
-無料のAIチーム 117 件、Grok Bot の道具 71 件）を、1つの JSON Lines ファイル（2.7 MB）にもしてあります。1行に1件で、id・カードの項目・本文は `get_item` が返すものと同じです。
+無料のAIチーム 117 件、Grok Bot の道具 71 件）を、1つの JSON Lines ファイル（2.7 MB）にもしてあります。1行に1件で、id・カードの項目・本文は、ファイルを作った 2026-11-20 に `get_item` が返したものと同じです（その後、棚で5件の文面を書き直しました）。
 学習データ・評価・手元の索引に。項目の説明、入れていないもの、ライセンス：[botshelfvampire.com/data/](https://botshelfvampire.com/data/?lang=ja)
 
 ```bash
@@ -268,6 +268,7 @@ Claude Code では、プロンプトはスラッシュコマンドとして出�
 - **Claude Code 2.1.304 と CLAUDE.md の1行**（モデル claude-haiku-5-5、Linux）、2026-11-21：BotShelf Vampire の名前を出さない頼みを3つ、1回ずつ。1行が無いと、このサーバーを使ったのは3回中0回。1行があると3回中3回、棚を探し、いちばん近い物を読んでページを見せました（[その1行](#claude-md-line)）。
 - **日本語の検索の言葉**、2026-11-21：棚の索引に、各項目の英語の題・分野・種類に合わせた日本語の言葉を入れました（決まった対訳表 122 組から。1,295 件のうち 1,243 件）。このサーバーのコードを手元で動かしたところ、日本語の検索 48 個のうち 43 個で項目が見つかり（前の索引では 26 個）、英語の検索 4,623 個は前の索引と同じ返事でした（[日本語の言葉](#japanese-words)）。
 - **英語の語形**、2026-11-21：棚の索引に、各項目に出てくる英語の語（題・種類・分野・動く場所・検索用の言葉と、説明の中で棚が名前にも使う語）の複数形と、決まった表の作業の動詞の -ing 形を足しました（1,295 件に、合わせて 14,737 語。この棚では別の意味になる複数形 news・puts・futures・shares は入れていません）。このサーバーのコードを手元で動かしたところ、英語の検索 4,597 個のうち 4,269 個は前の索引と同じ返事で、見つかる数が減ったものはありませんでした。日本語の検索 48 個も同じ返事でした（[英語の複数形](#word-forms)）。
+- **5つの項目の書き直し**、2026-11-21：文面が、項目の名前を入れただけの一般的な指示だった5つの項目を、それぞれの仕事のための手順に書き直しました：[Copy Editor Skill](https://botshelfvampire.com/library/skills/copy-editor-skill/)（校正・原稿の整え）、[Acceptance Criteria Skill](https://botshelfvampire.com/library/skills/acceptance-criteria-skill/)（ユーザーストーリーと Given / When / Then の受け入れ条件）、[Localization Review Skill](https://botshelfvampire.com/library/skills/localization-review-skill/)（翻訳と、翻訳のチェック）、[Alternative Generator](https://botshelfvampire.com/library/kimi-k3/alternative-generator/)（ブレインストーミング）、[Research-to-Article Team](https://botshelfvampire.com/library/agentswarm/research-to-article-team/)（ブログ記事・記事）。検索の言葉にも、proofread・user story・translate・brainstorm・blog post と、校正・ユーザーストーリー・翻訳・ブレスト・ブログを足しました。このサーバーのコードを手元で動かしたところ、日常の頼み 60 個のうち何も見つからなかったのは、前の索引では 9 個、今は 3 個です（commit message・regex・docker。棚にまだ合う物がありません）。英語の検索 4,597 個のうち 4,555 個は前と同じ返事で、見つかる数が減ったものはありませんでした。題・説明・件数は変えていません。
 - **動かしていないもの**：ChatGPT・Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose・Cline・Zed。行とリンクは、2026-11-18・2026-11-19・2026-11-21 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
 
 どの記録も、1台で1回動かしたものです。動作の約束ではありません。行やリンクがうまくいかないときは、issue で知らせてください。
