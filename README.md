@@ -32,11 +32,12 @@ Find a security review prompt on BotShelf Vampire and show me its full text.
 
 <sub>Each was run once in Claude Code 2.1.304 (model claude-haiku-5-5) against the live address on 2026-11-20: the model searched the shelf, read the item with `get_item` and answered. One client, one run each, not a promise for every model.</sub>
 
-<a name="japanese-words"></a>
-**Japanese words work too.** Since 2026-11-21 the search also finds items by Japanese words for their title, topic and type, such as コードレビュー, セキュリティ, 議事録, テスト or 営業. The words come from a fixed table of English and Japanese word pairs and were added to each item's search keywords. Of 48 Japanese searches we tried, 43 find items now (26 before). Adding them did not change the replies to the 4,623 English searches we compared. Most item texts are in English.
+<p align="center"><img src="assets/session.svg" alt="A recorded Claude Code session: the prompt, three tool calls to this server (list_filters, search_items, get_item) with what each returned, and the answer" width="860"></p>
 
-<a name="word-forms"></a>
-**Plural words work too.** Since 2026-11-21 the search also finds an item by the plural of the English words it shows, such as prompts, AI teams, code reviews or checklists, and by the -ing form of some task verbs, such as testing, planning or reporting. Before, "prompt" found 229 items and "prompts" found none. Of 50 plural or -ing searches we compared with their base words, 36 found fewer items than the base word before, 12 now. 29 found nothing before, 10 now; for 9 of those 10 the base word finds nothing either (blog posts, commit messages, user stories: no item on the shelf matches these words).
+<sub>A session recorded with Claude Code 2.1.308 on 2026-11-19 against this server (version 1.1.0): the prompt, three tool calls with what each returned, and the answer. Drawn from the client's own event stream, not captured from a screen. [The same lines as text](#what-a-session-looks-like).</sub>
+
+**Try it before you add it.** A form at **[botshelfvampire.com/mcp/#live](https://botshelfvampire.com/mcp/#live)** sends real `tools/call` messages to this server
+from your browser and shows the reply, the JSON-RPC on the wire and the round-trip time.
 
 <a name="claude-md-line"></a>
 **So that your AI tool looks on the shelf without being asked**, put this line in `CLAUDE.md`. Claude Code reads that file at the start of every session, and `~/.claude/CLAUDE.md` covers all your projects.
@@ -46,13 +47,6 @@ When I ask for a prompt, a skill, an instruction file or an AI team, first searc
 ```
 
 <sub>Run on 2026-11-21 with Claude Code 2.1.304 (model claude-haiku-5-5, on Linux): three asks that do not name BotShelf Vampire, one run each (a ChatGPT prompt for meeting notes, a prompt for a security review of a pull request, and the meeting one in Japanese with the line from [README.ja.md](README.ja.md#claude-md-line)). Without the line, the model wrote its own each time and called no tool on this server (0 of 3). With it, the model searched the shelf, read the closest match with `get_item` and showed its page before writing anything (3 of 3). For the runs the four tools were allowed in advance (`--allowedTools`); where they are not, Claude Code may ask you before it calls them. One client, one model, one run per ask: not a promise for every model. The line calls the server `botshelf`, the name the add lines below use. Codex reads `AGENTS.md` before it starts work (`~/.codex/AGENTS.md` for every project), so the same line can go there; not run in Codex. Sources: [Claude Code: How Claude remembers your project](https://code.claude.com/docs/en/memory), [Codex: Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md), read 2026-11-21.</sub>
-
-<p align="center"><img src="assets/session.svg" alt="A recorded Claude Code session: the prompt, three tool calls to this server (list_filters, search_items, get_item) with what each returned, and the answer" width="860"></p>
-
-<sub>A session recorded with Claude Code 2.1.308 on 2026-11-19 against this server (version 1.1.0): the prompt, three tool calls with what each returned, and the answer. Drawn from the client's own event stream, not captured from a screen. [The same lines as text](#what-a-session-looks-like).</sub>
-
-**Try it before you add it.** A form at **[botshelfvampire.com/mcp/#live](https://botshelfvampire.com/mcp/#live)** sends real `tools/call` messages to this server
-from your browser and shows the reply, the JSON-RPC on the wire and the round-trip time.
 
 <!-- w12-data -->
 **All the MIT texts in one file.** The 997 texts on the shelf that BotShelf Vampire wrote and marks MIT (809 Build Library prompts, instructions and skills,
@@ -228,6 +222,12 @@ All four are marked read-only, and each declares the shape of what it returns (`
 
 Of the 1,295 items, 1,293 are open without sign-up and 1,067 of those have a text file that `get_item` returns (the AI teams, the Build Library recipes and the Grok Bot tools).
 The others come back as a card with a link to their page. Counted from the shelf index on 2026-11-19.
+
+<a name="japanese-words"></a>
+**Japanese words work too.** Since 2026-11-21 the search also finds items by Japanese words for their title, topic and type, such as コードレビュー, セキュリティ, 議事録, テスト or 営業. The words come from a fixed table of English and Japanese word pairs and were added to each item's search keywords. Of 48 Japanese searches we tried, 43 find items now (26 before). Adding them did not change the replies to the 4,623 English searches we compared. Most item texts are in English.
+
+<a name="word-forms"></a>
+**Plural words work too.** Since 2026-11-21 the search also finds an item by the plural of the English words it shows, such as prompts, AI teams, code reviews or checklists, and by the -ing form of some task verbs, such as testing, planning or reporting. Before, "prompt" found 229 items and "prompts" found none. Of 50 plural or -ing searches we compared with their base words, 36 found fewer items than the base word before, 12 now. 29 found nothing before, 10 now; for 9 of those 10 the base word finds nothing either (blog posts, commit messages, user stories: no item on the shelf matches these words).
 
 ## Prompts and resources
 
