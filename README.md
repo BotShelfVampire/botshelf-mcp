@@ -14,7 +14,7 @@ Read-only. No account, no API key, nothing to install.
 https://botshelfvampire.com/api/mcp
 ```
 
-**Free. No account, no API key.** Add it to: [Claude app](#claude-app) · [Claude Code](#add-it-in-one-line) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [Cline](#add-it-in-one-line) · [Zed](#cline-zed-stdio) · [stdio clients](#cline-zed-stdio) · [other tools](#add-it-in-one-line)
+**Free. No account, no API key.** Add it to: [Claude app](#claude-app) · [ChatGPT](#chatgpt) · [Claude Code](#add-it-in-one-line) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [Cline](#add-it-in-one-line) · [Zed](#cline-zed-stdio) · [stdio clients](#cline-zed-stdio) · [other tools](#add-it-in-one-line)
 
 **Then ask your AI tool, for example:**
 
@@ -33,7 +33,10 @@ Find a security review prompt on BotShelf Vampire and show me its full text.
 <sub>Each was run once in Claude Code 2.1.304 (model claude-haiku-5-5) against the live address on 2026-11-20: the model searched the shelf, read the item with `get_item` and answered. One client, one run each, not a promise for every model.</sub>
 
 <a name="japanese-words"></a>
-**Japanese words work too.** Since 2026-11-21 the search also finds items by Japanese words for their title, topic and type, such as コードレビュー, セキュリティ, 議事録, テスト or 営業. The words come from a fixed table of English and Japanese word pairs and were added to each item's search keywords. Of 48 Japanese searches we tried, 43 find items now (26 before). The 4,623 English searches we compared give the same replies as before. Most item texts are in English.
+**Japanese words work too.** Since 2026-11-21 the search also finds items by Japanese words for their title, topic and type, such as コードレビュー, セキュリティ, 議事録, テスト or 営業. The words come from a fixed table of English and Japanese word pairs and were added to each item's search keywords. Of 48 Japanese searches we tried, 43 find items now (26 before). Adding them did not change the replies to the 4,623 English searches we compared. Most item texts are in English.
+
+<a name="word-forms"></a>
+**Plural words work too.** Since 2026-11-21 the search also finds an item by the plural of the English words it shows, such as prompts, AI teams, code reviews or checklists, and by the -ing form of some task verbs, such as testing, planning or reporting. Before, "prompt" found 229 items and "prompts" found none. Of 50 plural or -ing searches we compared with their base words, 36 found fewer items than the base word before, 12 now. 29 found nothing before, 10 now; for 9 of those 10 the base word finds nothing either (blog posts, commit messages, user stories: no item on the shelf matches these words).
 
 <a name="claude-md-line"></a>
 **So that your AI tool looks on the shelf without being asked**, put this line in `CLAUDE.md`. Claude Code reads that file at the start of every session, and `~/.claude/CLAUDE.md` covers all your projects.
@@ -171,6 +174,21 @@ Claude's help center says custom connectors work on the Free, Pro, Max, Ultra, T
 On Team and Enterprise, an Owner adds it under Organization settings > Connectors. We have not run these steps inside the Claude app.
 Source: [Get started with custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp), read 2026-11-20.
 
+<a name="chatgpt"></a>
+## ChatGPT (chatgpt.com on the web)
+
+In ChatGPT this server is added as a custom MCP server, which becomes a plugin:
+
+1. Go to [Plugins](https://chatgpt.com/plugins), select the plus button, then **Add custom MCP server**.
+2. Enter a name (for example BotShelf Vampire) and, under **Connection**, `https://botshelfvampire.com/api/mcp`.
+3. For authentication choose **No authentication**. Review the risk warning, select **I understand and want to continue**, then **Create as a plugin**.
+4. Install the plugin, start a new conversation, type **@** in the prompt box and select the plugin.
+
+OpenAI's help center says custom MCP servers can be connected on ChatGPT web by Business and Enterprise/Edu customers, and by Pro users with read/fetch permissions; not on mobile.
+In a Business workspace only admins and owners create these plugins. Developer Mode does not have to be turned on first. The page does not name the Free, Go or Plus plans.
+All four tools of this server are marked read-only (`readOnlyHint`); ChatGPT treats a tool without that mark as a write action. We have not run these steps inside ChatGPT.
+Sources: [Connecting custom MCP servers in ChatGPT](https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt), [Add custom MCP server](https://developers.openai.com/api/docs/guides/custom-mcp-server), read 2026-11-21.
+
 ## What a session looks like
 
 The picture at the top is this session: Claude Code 2.1.308 on macOS, 2026-11-19, server version 1.1.0. The calls with their arguments, what came back and the answer are taken from the client's own event stream: each `⎿` line is worked out from the JSON that call returned, and the answer is the model's own text (wrapped to the width, its Markdown marks not shown). The prompt is the one given on the command line and the version is the one the server reported that evening; the stream holds neither.
@@ -249,7 +267,8 @@ In Claude Code the prompts show up as slash commands: `/mcp__botshelf__find_item
 - **Claude Code 2.1.304, the plugin** (Linux, from an empty settings folder), 2026-11-21: `claude plugin marketplace add BotShelfVampire/botshelf-mcp` and `claude plugin install botshelf-mcp@botshelfvampire` succeeded, and `claude mcp list` showed the plugin's server as connected.
 - **Claude Code 2.1.304, the CLAUDE.md line** (model claude-haiku-5-5, Linux), 2026-11-21: three asks that do not name BotShelf Vampire, one run each. Without the line the model used this server in 0 of 3; with it, in 3 of 3 it searched the shelf, read the closest match and showed its page ([the line](#claude-md-line)).
 - **Japanese search words**, 2026-11-21: the shelf index got Japanese words for each item's English title, topic and type (a fixed table of 122 word pairs; 1,243 of the 1,295 items). Run through this server's code on our own machine: 43 of 48 Japanese searches found items (26 with the old index), and 4,623 English searches gave the same replies as with the old index ([Japanese words](#japanese-words)).
-- **Not run:** Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose, Cline, Zed. Their lines and links were written from each maker's documentation as read on 2026-11-18, 2026-11-19 and 2026-11-21. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
+- **English word forms**, 2026-11-21: the shelf index got the plural of the English words each item shows (title, type, topic, where-it-runs names, keywords, and the description words that the shelf also uses in names) and the -ing form of a fixed list of task verbs: 14,737 words over the 1,295 items; plurals that mean something else on this shelf (news, puts, futures, shares) were left out. Run through this server's code on our own machine: of 4,597 different English searches, 4,269 gave the same replies as with the old index and none found fewer items; the 48 Japanese searches gave the same replies ([Plural words](#word-forms)).
+- **Not run:** ChatGPT, Grok Build, Gemini CLI, Cursor, VS Code, LM Studio, Kiro, Goose, Cline, Zed. Their lines and links were written from each maker's documentation as read on 2026-11-18, 2026-11-19 and 2026-11-21. The VS Code, Kiro and Goose links are in the documented form; the Cursor and LM Studio links go to those makers' own web pages for the install link they document (that web address itself is not in their documentation). The four link addresses above were opened once each and answered; nobody here has pressed them inside the apps.
 
 Each run is one run on one machine, not a compatibility promise. If a line or a link fails for you, open an issue.
 

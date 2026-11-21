@@ -14,7 +14,7 @@ Build Library のプロンプト・指示・スキル・ワークフロー 879 �
 https://botshelfvampire.com/api/mcp
 ```
 
-**無料。アカウントもAPIキーも要りません。** 追加先：[Claude アプリ](#claude-app) · [Claude Code](#1行で追加する) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [Cline](#1行で追加する) · [Zed](#cline-zed-stdio) · [stdio だけのクライアント](#cline-zed-stdio) · [ほかのツール](#1行で追加する)
+**無料。アカウントもAPIキーも要りません。** 追加先：[Claude アプリ](#claude-app) · [ChatGPT](#chatgpt) · [Claude Code](#1行で追加する) · [Cursor](https://cursor.com/en/install-mcp?name=botshelf&config=eyJ1cmwiOiJodHRwczovL2JvdHNoZWxmdmFtcGlyZS5jb20vYXBpL21jcCJ9) · [VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522botshelf%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fbotshelfvampire.com%252Fapi%252Fmcp%2522%257D) · [Cline](#1行で追加する) · [Zed](#cline-zed-stdio) · [stdio だけのクライアント](#cline-zed-stdio) · [ほかのツール](#1行で追加する)
 
 **追加したら、たとえばこう頼みます：**
 
@@ -33,7 +33,10 @@ BotShelf Vampire でセキュリティレビューのプロンプトを探して
 <sub>2026-11-20 に、Claude Code 2.1.304（モデル claude-haiku-5-5）から本番のアドレスに対して流しました。どれも、モデルが棚を検索し、`get_item` で項目を読んで答えました。2つ目は、1回目はモデルがツールを呼ばずに終わり、2回目で動きました。ほかの2つは1回ずつです。1つのクライアントでの記録で、どのモデルでも同じに動くという約束ではありません。</sub>
 
 <a name="japanese-words"></a>
-**日本語の言葉でも探せます**。2026-11-21 から、各項目の題・分野・種類に合う日本語の言葉（コードレビュー・セキュリティ・議事録・テスト・営業 など）でも、項目が見つかるようにしました。英語と日本語の決まった対訳表から、項目の検索用の言葉に足したものです。試した日本語の検索 48 個のうち、項目が見つかるのは 26 個から 43 個になりました。比べた英語の検索 4,623 個は、前と同じ返事です。項目の本文は、ほとんど英語です。
+**日本語の言葉でも探せます**。2026-11-21 から、各項目の題・分野・種類に合う日本語の言葉（コードレビュー・セキュリティ・議事録・テスト・営業 など）でも、項目が見つかるようにしました。英語と日本語の決まった対訳表から、項目の検索用の言葉に足したものです。試した日本語の検索 48 個のうち、項目が見つかるのは 26 個から 43 個になりました。日本語の言葉を足しても、比べた英語の検索 4,623 個の返事は変わりませんでした。項目の本文は、ほとんど英語です。
+
+<a name="word-forms"></a>
+**英語の複数形でも探せます**。2026-11-21 から、項目に出てくる英語の語の複数形（prompts・AI teams・code reviews・checklists など）と、いくつかの作業の動詞の -ing 形（testing・planning・reporting など）でも、項目が見つかるようにしました。前は「prompt」で 229 件見つかるのに、「prompts」では1件も見つかりませんでした。元の語と比べた複数形・-ing 形の検索 50 個のうち、元の語より見つかる数が少ないのは 36 個から 12 個に、1件も見つからないのは 29 個から 10 個になりました。その 10 個のうち 9 個は、元の語でも見つかりません（blog posts・commit messages・user stories など。その語に合う物が棚にありません）。
 
 <a name="claude-md-line"></a>
 **頼まなくても AIツールが棚を見に行くように**、次の1行を `CLAUDE.md` に入れます。Claude Code は会話の始めに毎回このファイルを読みます。`~/.claude/CLAUDE.md` に入れれば、自分の全プロジェクトに効きます。
@@ -171,6 +174,21 @@ Claude のヘルプセンターによると、カスタムコネクタは Free�
 Team と Enterprise では、Owner が Organization settings > Connectors から追加します。この手順を Claude アプリの中でこちらが実行したことはありません。
 出どころ：[Get started with custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp)（2026-11-20 に読んだもの）。
 
+<a name="chatgpt"></a>
+## ChatGPT（Web の chatgpt.com）
+
+ChatGPT では、このサーバーを「カスタム MCP サーバー」として追加し、プラグインとして使います：
+
+1. [Plugins](https://chatgpt.com/plugins) を開き、＋のボタン → **Add custom MCP server** を選びます。
+2. 名前（例：BotShelf Vampire）を入れ、**Connection** に `https://botshelfvampire.com/api/mcp` を入れます。
+3. 認証は **No authentication** を選びます。注意の文を読んで **I understand and want to continue** にチェックを入れ、**Create as a plugin** を選びます。
+4. できたプラグインを入れてから新しい会話を始め、入力欄に **@** と打って、そのプラグインを選びます。
+
+OpenAI のヘルプセンターによると、カスタム MCP サーバーをつなげるのは Web 版の ChatGPT で、Business と Enterprise/Edu、それに Pro（読む・取ってくる権限まで）です。スマートフォンのアプリからはつなげません。
+Business のワークスペースでは、作れるのは管理者とオーナーだけです。先に Developer Mode を入れる必要はありません。Free・Go・Plus については書かれていません。
+このサーバーの4つのツールには、すべて「読むだけ」の印（`readOnlyHint`）が付いています。ChatGPT は、この印の無いツールを書き込みの操作として扱います。この手順を ChatGPT の中でこちらが実行したことはありません。
+出どころ：[Connecting custom MCP servers in ChatGPT](https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt)・[Add custom MCP server](https://developers.openai.com/api/docs/guides/custom-mcp-server)（2026-11-21 に読んだもの）。
+
 ## 実際のやり取り
 
 冒頭の絵は、このやり取りです（macOS の Claude Code 2.1.308、2026-11-19、サーバーはバージョン 1.1.0）。呼び出しと引数、返ってきた内容、答えは、クライアントが出力したイベントの記録から取りました。`⎿` の行はその呼び出しが返した JSON から作った1行、答えはモデルの文です（幅に合わせて折り返し、Markdown の記号は表示していません）。依頼文はコマンドラインで渡した文、版はその晩にサーバーが名乗った版で、この2つはイベントの記録には入っていません。
@@ -249,7 +267,8 @@ Claude Code では、プロンプトはスラッシュコマンドとして出�
 - **Claude Code 2.1.304 のプラグイン**（Linux、空の設定フォルダから）、2026-11-21：`claude plugin marketplace add BotShelfVampire/botshelf-mcp` と `claude plugin install botshelf-mcp@botshelfvampire` が成功し、`claude mcp list` でプラグインのサーバーがつながっていると出ました。
 - **Claude Code 2.1.304 と CLAUDE.md の1行**（モデル claude-haiku-5-5、Linux）、2026-11-21：BotShelf Vampire の名前を出さない頼みを3つ、1回ずつ。1行が無いと、このサーバーを使ったのは3回中0回。1行があると3回中3回、棚を探し、いちばん近い物を読んでページを見せました（[その1行](#claude-md-line)）。
 - **日本語の検索の言葉**、2026-11-21：棚の索引に、各項目の英語の題・分野・種類に合わせた日本語の言葉を入れました（決まった対訳表 122 組から。1,295 件のうち 1,243 件）。このサーバーのコードを手元で動かしたところ、日本語の検索 48 個のうち 43 個で項目が見つかり（前の索引では 26 個）、英語の検索 4,623 個は前の索引と同じ返事でした（[日本語の言葉](#japanese-words)）。
-- **動かしていないもの**：Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose・Cline・Zed。行とリンクは、2026-11-18・2026-11-19・2026-11-21 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
+- **英語の語形**、2026-11-21：棚の索引に、各項目に出てくる英語の語（題・種類・分野・動く場所・検索用の言葉と、説明の中で棚が名前にも使う語）の複数形と、決まった表の作業の動詞の -ing 形を足しました（1,295 件に、合わせて 14,737 語。この棚では別の意味になる複数形 news・puts・futures・shares は入れていません）。このサーバーのコードを手元で動かしたところ、英語の検索 4,597 個のうち 4,269 個は前の索引と同じ返事で、見つかる数が減ったものはありませんでした。日本語の検索 48 個も同じ返事でした（[英語の複数形](#word-forms)）。
+- **動かしていないもの**：ChatGPT・Grok Build・Gemini CLI・Cursor・VS Code・LM Studio・Kiro・Goose・Cline・Zed。行とリンクは、2026-11-18・2026-11-19・2026-11-21 に読んだ各提供元のドキュメントをもとに書きました。VS Code・Kiro・Goose のリンクは、ドキュメントにある書式です。Cursor と LM Studio のリンクは、ドキュメントにある導入リンクと同じ設定を、それぞれの提供元の Web ページに渡すものです（この Web のアドレス自体は、ドキュメントには載っていません）。上の4つのリンクは、1回ずつ開いて応答があることだけを確かめました。アプリの中でリンクを押すところまでは確かめていません。
 
 どの記録も、1台で1回動かしたものです。動作の約束ではありません。行やリンクがうまくいかないときは、issue で知らせてください。
 
