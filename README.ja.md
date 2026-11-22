@@ -62,6 +62,8 @@ import pandas as pd
 df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", lines=True)  # 997 行・15 列
 ```
 997 行のうち 280 行は、項目の名前を除くと、ほかの行と同じ文です（17 組、いちばん大きい組はスキル 127 件）。[組の一覧](https://botshelfvampire.com/data/mit-texts.v20261120.same-text.json)を使って1つの文につき1行だけ残すと、734 行になります（[そのための1行](https://botshelfvampire.com/data/?lang=ja#load)）。
+
+同じファイルを、MLCommons の Croissant 1.1 の形で [botshelfvampire.com/data/croissant.json](https://botshelfvampire.com/data/croissant.json) に書きました（15 項目）。機械学習の道具から行として読めます：`mlcroissant.Dataset("https://botshelfvampire.com/data/croissant.json").records("texts")` は 2026-11-22 に 997 件を返しました。
 <!-- /w12-data -->
 
 **利用者に近いネットワークの端（エッジ）で答えます。** 同じコードの写しが、すべての呼び出しに答えます。東京から測った値（2026-11-19）は、接続を開いたままの呼び出しで1回 0.09〜0.14 秒（`ping` と `search_items` を合わせて 10 回）。

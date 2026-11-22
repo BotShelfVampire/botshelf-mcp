@@ -62,6 +62,8 @@ import pandas as pd
 df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", lines=True)  # 997 rows, 15 columns
 ```
 280 of the 997 rows are the same text as another row except for the item's own name (17 groups, the largest 127 skills). [The groups](https://botshelfvampire.com/data/mit-texts.v20261120.same-text.json) let you keep one row per text: 734 remain ([the line for it](https://botshelfvampire.com/data/#load)).
+
+The same file is described in MLCommons Croissant 1.1 at [botshelfvampire.com/data/croissant.json](https://botshelfvampire.com/data/croissant.json) (15 fields), so ML tools can read it as records: `mlcroissant.Dataset("https://botshelfvampire.com/data/croissant.json").records("texts")` gave 997 records on 2026-11-22.
 <!-- /w12-data -->
 
 **Answered at the edge of the network.** A copy of the same code, close to the caller, answers every call: 0.09 to 0.14 s a call on an open connection,
