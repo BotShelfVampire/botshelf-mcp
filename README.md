@@ -66,6 +66,8 @@ df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", 
 The same file is described in MLCommons Croissant 1.1 at [botshelfvampire.com/data/croissant.json](https://botshelfvampire.com/data/croissant.json) (15 fields), so ML tools can read it as records: `mlcroissant.Dataset("https://botshelfvampire.com/data/croissant.json").records("texts")` gave 997 records on 2026-11-22.
 
 Since server 1.2.1 (2026-11-22) the MCP server says so too: its instructions and its guide resource (`botshelf://shelf/guide`) name this file, so an AI tool asked for the texts in bulk is sent here rather than reading the items one by one.
+
+To cite the file: the plain line and a BibTeX entry are at [botshelfvampire.com/data/#cite](https://botshelfvampire.com/data/#cite), and [CITATION.cff](CITATION.cff) in this repository gives the server and the file (GitHub shows it as "Cite this repository").
 <!-- /w12-data -->
 
 **Answered at the edge of the network.** A copy of the same code, close to the caller, answers every call: 0.09 to 0.14 s a call on an open connection,
@@ -293,11 +295,14 @@ git clone https://github.com/BotShelfVampire/botshelf-mcp && node botshelf-mcp/t
 
 No dependency. It uses the built-in `fetch` (Node.js 18 or newer, or bun) and was run here under Node.js 24 and under bun. The script puts 15 requests to the live address: 14 JSON-RPC messages of the kind an MCP client sends (the handshake, the list of tools, a call of each tool, things the server has to refuse) and one plain GET, which it has to refuse too. The word it searches for is taken from the shelf itself. A request that fails on the network, or is answered with 429, is sent once more. For each request it prints the HTTP status, the time the round trip took from your machine and the place that answered. It ends with `PASS 22 checks`, or with the checks that failed.
 
+**Found from the domain.** Since 2026-11-22, [botshelfvampire.com/.well-known/ai-catalog.json](https://botshelfvampire.com/.well-known/ai-catalog.json) (AI Catalog 0.9) lists this server's MCP Server Card at [botshelfvampire.com/api/mcp/server-card](https://botshelfvampire.com/api/mcp/server-card), the address SEP-2127 reserves for it, and the MIT data file. Every page of the site also sends `Link: </.well-known/ai-catalog.json>; rel="ai-catalog"`. A client that reads these needs only the domain name to find the server.
+
 ## This repository
 
 | Path | What it is |
 | --- | --- |
 | `server.json` | Entry for the MCP Registry (`com.botshelfvampire/botshelf`). |
+| `CITATION.cff` | How to cite this server and the MIT texts file. |
 | `.mcp.json`, `.claude-plugin/` | Lets Claude Code (and clients that read the same layout) add the server as a plugin. |
 | `src/mcp.js`, `src/_lib/mcpCore.js` | The function as deployed on the site (Netlify function, Node). Published so the read-only claim can be checked. |
 | `src/edge/mcp-edge.template.js` | The edge function, which answers the calls, without its inserts. The deployed file is this text with `_lib/mcpCore.js` put in at `/*@@CORE@@*/`, the shelf index as one string at `"@@INDEX@@"`, the item texts as one string at `"@@TEXT_ALL@@"` and the table of where each text stands at `"@@TEXT_AT@@"`. |

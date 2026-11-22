@@ -66,6 +66,8 @@ df = pd.read_json("https://botshelfvampire.com/data/mit-texts.v20261120.jsonl", 
 同じファイルを、MLCommons の Croissant 1.1 の形で [botshelfvampire.com/data/croissant.json](https://botshelfvampire.com/data/croissant.json) に書きました（15 項目）。機械学習の道具から行として読めます：`mlcroissant.Dataset("https://botshelfvampire.com/data/croissant.json").records("texts")` は 2026-11-22 に 997 件を返しました。
 
 サーバー 1.2.1（2026-11-22）から、MCP サーバーもこのファイルを案内します。サーバーの説明（instructions）と案内のリソース（`botshelf://shelf/guide`）にこのファイルの場所を書いたので、まとめて欲しいと頼まれた AI ツールは、項目を1つずつ読む代わりに、ここへ案内されます。
+
+引用するとき：ふつうの1行と BibTeX を [botshelfvampire.com/data/#cite](https://botshelfvampire.com/data/?lang=ja#cite) に載せています。このリポジトリの [CITATION.cff](CITATION.cff) にも、サーバーとファイルの両方を書きました（GitHub には「Cite this repository」と出ます）。
 <!-- /w12-data -->
 
 **利用者に近いネットワークの端（エッジ）で答えます。** 同じコードの写しが、すべての呼び出しに答えます。東京から測った値（2026-11-19）は、接続を開いたままの呼び出しで1回 0.09〜0.14 秒（`ping` と `search_items` を合わせて 10 回）。
@@ -293,11 +295,14 @@ git clone https://github.com/BotShelfVampire/botshelf-mcp && node botshelf-mcp/t
 
 追加で入れる物はありません。組み込みの `fetch` を使います（Node.js 18 以上、または bun）。こちらでは Node.js 24 と bun で動かしました。このスクリプトは、公開中のアドレスへリクエストを 15 件送ります。14 件は MCP クライアントが送るのと同じ JSON-RPC のメッセージ（接続の手順、ツールの一覧、各ツールの呼び出し、サーバーが断るべきもの）、1件はただの GET です（これも断られるのが正しい動きです）。検索する言葉は、棚そのものから取ります。通信に失敗したリクエストと、429 が返ったリクエストは、1回だけ送り直します。1件ごとに、HTTP ステータス、手元から測った往復の時間、どこが答えたかを表示し、最後に `PASS 22 checks`、または通らなかった項目を出します。
 
+**ドメインから見つかります。** 2026-11-22 から、[botshelfvampire.com/.well-known/ai-catalog.json](https://botshelfvampire.com/.well-known/ai-catalog.json)（AI Catalog 0.9）に、このサーバーの MCP Server Card（[botshelfvampire.com/api/mcp/server-card](https://botshelfvampire.com/api/mcp/server-card)。SEP-2127 がこのために取っておいた住所）と、MIT のデータのファイルを載せています。サイトのどのページも `Link: </.well-known/ai-catalog.json>; rel="ai-catalog"` を返します。これを読むクライアントは、ドメイン名だけでこのサーバーを見つけられます。
+
 ## このリポジトリ
 
 | パス | 中身 |
 | --- | --- |
 | `server.json` | MCP Registry への登録内容（`com.botshelfvampire/botshelf`）。 |
+| `CITATION.cff` | このサーバーと MIT の文面のファイルの引用のしかた。 |
 | `.mcp.json`、`.claude-plugin/` | Claude Code（と、同じ置き方を読むクライアント）が、プラグインとしてサーバーを追加するためのファイル。 |
 | `src/mcp.js`、`src/_lib/mcpCore.js` | サイトで動いている関数そのもの（Netlify の関数、Node）。読み取り専用であることを確かめられるよう、公開しています。 |
 | `src/edge/mcp-edge.template.js` | 呼び出しに答えているエッジ用のファイルから、差し込む部分を抜いたもの。本番のファイルは、この文面の `/*@@CORE@@*/` に `_lib/mcpCore.js` を、`"@@INDEX@@"` に棚の索引（1つの文字列）を、`"@@TEXT_ALL@@"` に項目の本文（1つの文字列）を、`"@@TEXT_AT@@"` に各本文の位置の表を入れたものです。 |

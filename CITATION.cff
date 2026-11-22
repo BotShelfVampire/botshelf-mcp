@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this server, cite it as below. If you use the MIT texts file, cite the dataset under references (the same line is on https://botshelfvampire.com/data/#cite)."
+type: software
+title: "BotShelf Vampire MCP server"
+abstract: "Read-only MCP server for the BotShelf Vampire shelf: search free prompts, skills, AI teams and Grok Bot tools and read the full text. No account, no API key."
+authors:
+  - name: "BotShelf Vampire"
+    website: "https://botshelfvampire.com/"
+    email: "support@botshelfvampire.com"
+version: "1.2.1"
+date-released: "2026-11-22"
+license: MIT
+repository-code: "https://github.com/BotShelfVampire/botshelf-mcp"
+url: "https://botshelfvampire.com/mcp/"
+keywords:
+  - mcp
+  - model-context-protocol
+  - prompts
+  - ai-agents
+  - training-data
+references:
+  - type: data
+    title: "The MIT texts in one JSONL file (mit-texts.v20261120.jsonl)"
+    abstract: "997 prompts, instructions, skills and AI-team texts written by BotShelf Vampire, one JSON object per line with the full text. MIT License."
+    authors:
+      - name: "BotShelf Vampire"
+    version: "20261120"
+    date-released: "2026-11-20"
+    license: MIT
+    url: "https://botshelfvampire.com/data/"
