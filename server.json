@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.botshelfvampire/botshelf",
-  "title": "BotShelf Vampire",
-  "description": "Read-only search and full text for free AI teams, recipes and Grok Bot tools. No account.",
+  "title": "BotShelf Vampire: free prompts, skills and AI teams",
+  "description": "Search 1,295 prompts, skills, AI teams and tools; read 1,067 free ones in full. No account, no key.",
   "repository": {
     "url": "https://github.com/BotShelfVampire/botshelf-mcp",
     "source": "github"
@@ -17,7 +17,7 @@
       ]
     }
   ],
-  "version": "1.2.0",
+  "version": "1.2.1",
   "remotes": [
     {
       "type": "streamable-http",

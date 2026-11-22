@@ -4,6 +4,7 @@
 // 1.1.0 (2026-11-19): list_filters, whole-word ranking, suggestions, serverInfo fields, the "via" header.
 // 1.2.0 (2026-11-20): output shapes (every reply of every tool is held against the shape the tool declares),
 // prompts, resources and the resource template.
+// 1.2.1 (2026-11-22): the instructions and the guide point to the MIT texts as one file, and that file is there.
 process.env.COMMERCE_SESSION_SECRET = "mcp-test-secret-not-a-real-one";
 const fs = require("fs");
 const path = require("path");
@@ -98,12 +99,14 @@ const tool = async (name, args, o) => {
   eq([x.r.statusCode, x.j.id, x.j.result.protocolVersion], [200, "a", "2025-06-18"], "initialize echoes a supported version and the id");
   eq(x.j.result.serverInfo.name, "botshelf-vampire", "server name");
   const si = x.j.result.serverInfo;
-  eq([si.version, core.SERVER.version], ["1.2.0", "1.2.0"], "server version");
+  eq([si.version, core.SERVER.version], ["1.2.1", "1.2.1"], "server version");
   ok(si.websiteUrl === "https://botshelfvampire.com/mcp/" && fs.existsSync(path.join(root, "site", "mcp", "index.html")), "serverInfo names the page of the site, and the page exists");
   ok(Array.isArray(si.icons) && si.icons.length === 1 && si.icons[0].src === "https://botshelfvampire.com/img/mark.jpg" && si.icons[0].mimeType === "image/jpeg"
     && fs.existsSync(path.join(root, "site", "img", "mark.jpg")), "serverInfo names one icon, and it is a file of the site");
   ok(typeof si.description === "string" && si.description.length >= 40 && /Read-only/.test(si.description) && !/official/i.test(si.description), "serverInfo has a plain description");
   ok(/list_filters/.test(x.j.result.instructions), "instructions name the fourth tool");
+  const bulkSaid = /the (\d+) texts marked MIT are one JSONL file, described at https:\/\/botshelfvampire\.com\/data\/;/.exec(x.j.result.instructions);
+  ok(bulkSaid && fs.existsSync(path.join(root, "site", "data", "index.html")), "instructions send bulk use to the data page, and the page exists");
   eq(x.r.headers["X-BSV-Via"], "function", "the function says that it answered");
   ok(/X-BSV-Via/.test(x.r.headers["Access-Control-Expose-Headers"]), "a page on another origin may read which place answered");
   const quiet = core.create({ origin: "https://botshelfvampire.com", loadIndex: async () => ({ rows: [] }), loadText: async () => "" });
@@ -566,6 +569,14 @@ const tool = async (name, args, o) => {
   ok(x.result.contents[0].mimeType === "text/markdown" && toolNames.every((n) => guide.indexOf("`" + n + "`") > 0) && prompts.every((p) => guide.indexOf("`" + p.name + "`") > 0)
     && resList.every((r) => guide.indexOf("`" + r.uri + "`") > 0) && guide.indexOf("`botshelf://item{+id}`") > 0, "the guide names every tool, prompt and resource");
   ok(guide.indexOf(core.LIMITS.perMinute + " calls a minute") > 0 && guide.indexOf("32 KB per request") > 0 && guide.indexOf("up to " + core.LIMITS.pageMax + " results") > 0 && guide.indexOf(core.LIMITS.textMax + " characters") > 0, "and gives the limits the server keeps");
+  const croissant = JSON.parse(String(fs.readFileSync(path.join(root, "site", "data", "croissant.json"), "utf8")));
+  const jsonlUrl = croissant.distribution.map((d) => d.contentUrl).find((u) => /\.jsonl$/.test(u || ""));
+  const jsonlRows = String(fs.readFileSync(path.join(root, "site", jsonlUrl.replace("https://botshelfvampire.com/", "")), "utf8")).split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
+  const guideSaid = /The (\d+) texts on the shelf marked MIT are also one JSONL file/.exec(guide);
+  ok(guideSaid && guide.indexOf("https://botshelfvampire.com/data/ says") > 0 && guide.indexOf("https://botshelfvampire.com/data/croissant.json describes it") > 0,
+    "the guide names the data page and the Croissant file");
+  eq([Number(guideSaid && guideSaid[1]), Number(bulkSaid && bulkSaid[1])], [jsonlRows.length, jsonlRows.length], "the guide and the instructions give the number of rows of the JSONL file");
+  ok(jsonlRows.length > 0 && jsonlRows.every((r) => r.license === "MIT"), "and every row of that file is marked MIT");
   const withFile = rows.find((r) => r.k === "build" && r.a === "open" && r.raw), bare = rows.find((r) => r.a === "open" && !r.raw);
   x = await readRes("botshelf://item" + withFile.u);
   eq([x.result.contents.length, x.result.contents[0].uri, x.result.contents[0].mimeType], [1, "botshelf://item" + withFile.u, "text/markdown"], "an item is one piece of Markdown under its own address");
